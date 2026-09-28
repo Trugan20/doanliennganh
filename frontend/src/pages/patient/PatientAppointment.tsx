@@ -383,7 +383,7 @@ function BookingFlow({ services, onClose }: { services: Service[]; onClose: () =
   );
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-h-[80vh] overflow-y-auto pr-1">
+    <div className="flex flex-col lg:flex-row gap-6 pr-1">
       {/* LEFT COLUMN: BOOKING FORM */}
       <form onSubmit={handleSubmit} className="w-full lg:w-[38%] space-y-4 pr-1 border-r border-slate-100 flex flex-col justify-between">
         <div className="space-y-4">
