@@ -3,7 +3,7 @@
 const logger = require('../utils/logger');
 
 /**
- * Email Service for VinaMec Dental Care System.
+ * Email Service for  Dental Care System.
  *
  * In production, replace the `send` implementation with Nodemailer + SMTP,
  * SendGrid, AWS SES, or any provider by setting the env vars below:

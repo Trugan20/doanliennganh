@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Date utility helpers for VinaMec Dental Care API.
+ * Date utility helpers for Dental Care API.
  * All functions work with plain YYYY-MM-DD strings or Date objects.
  */
 

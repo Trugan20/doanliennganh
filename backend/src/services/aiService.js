@@ -321,12 +321,12 @@ function ruleBasedResponse(userMessage) {
   // No match - provide a helpful fallback
   const fallbacks = {
     vi: [
-      `Cảm ơn bạn đã hỏi về "${userMessage}". Là trợ lý nha khoa AI, tôi chuyên tư vấn về: sức khỏe răng miệng, các dịch vụ nha khoa, và chăm sóc răng hàng ngày. Để được tư vấn chính xác nhất, bạn có thể hỏi cụ thể hơn về một vấn đề răng miệng, hoặc đặt lịch khám tại VinaMec để bác sĩ thăm khám trực tiếp.`,
-      `Tôi hiểu bạn đang quan tâm đến "${userMessage}". Nếu đây là vấn đề liên quan đến răng miệng, hãy cho tôi biết thêm chi tiết. Nếu bạn cần được khám trực tiếp, VinaMec Dental Clinic luôn sẵn sàng hỗ trợ bạn!`,
+      `Cảm ơn bạn đã hỏi về "${userMessage}". Là trợ lý nha khoa AI, tôi chuyên tư vấn về: sức khỏe răng miệng, các dịch vụ nha khoa, và chăm sóc răng hàng ngày. Để được tư vấn chính xác nhất, bạn có thể hỏi cụ thể hơn về một vấn đề răng miệng, hoặc đặt lịch khám tại Mirai để bác sĩ thăm khám trực tiếp.`,
+      `Tôi hiểu bạn đang quan tâm đến "${userMessage}". Nếu đây là vấn đề liên quan đến răng miệng, hãy cho tôi biết thêm chi tiết. Nếu bạn cần được khám trực tiếp,  Dental Clinic luôn sẵn sàng hỗ trợ bạn!`,
     ],
     en: [
-      `Thank you for your question about "${userMessage}". As a dental AI assistant, I specialize in: oral health, dental services, and daily dental care. For the most accurate advice, please ask a more specific question about a dental concern, or book an appointment at VinaMec to see a dentist in person.`,
-      `I understand you're asking about "${userMessage}". If this is dental-related, please provide more details. If you need an in-person examination, VinaMec Dental Clinic is here to help!`,
+      `Thank you for your question about "${userMessage}". As a dental AI assistant, I specialize in: oral health, dental services, and daily dental care. For the most accurate advice, please ask a more specific question about a dental concern, or book an appointment at Mirai to see a dentist in person.`,
+      `I understand you're asking about "${userMessage}". If this is dental-related, please provide more details. If you need an in-person examination,  Dental Clinic is here to help!`,
     ],
   };
 

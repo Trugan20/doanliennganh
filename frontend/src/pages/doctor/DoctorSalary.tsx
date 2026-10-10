@@ -399,7 +399,7 @@ export default function DoctorSalary() {
         <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-xl border-b border-violet-100 px-6 lg:px-10 py-5 flex items-center justify-between shadow-sm">
           <div>
             <h1 className="text-2xl font-black text-slate-800">Bảng lương của tôi</h1>
-            <p className="text-sm text-slate-400 mt-0.5">Phòng khám nha khoa VinaMec Dental</p>
+            <p className="text-sm text-slate-400 mt-0.5">Phòng khám nha khoa Mirai Dental</p>
           </div>
           {/* Doctor info badge */}
           <div className="flex items-center gap-3 bg-violet-50 border border-violet-100 rounded-2xl px-5 py-3">
