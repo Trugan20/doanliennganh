@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Swagger / OpenAPI 3.0 specification for VinaMec Dental Care API.
+ * Swagger / OpenAPI 3.0 specification for Dental Care API.
  * Served at GET /api/docs when NODE_ENV !== 'production'.
  *
  * To enable full interactive docs, install swagger-ui-express:
@@ -12,9 +12,9 @@
 const swaggerDocument = {
   openapi: '3.0.3',
   info: {
-    title: 'VinaMec Dental Care AI System – API',
+    title: 'Dental Care AI System – API',
     description: `
-## 🦷 VinaMec Dental Care REST API
+## 🦷 Dental Care REST API
 
 Full-featured dental clinic management API with RBAC, AI chatbot, image analysis, and more.
 

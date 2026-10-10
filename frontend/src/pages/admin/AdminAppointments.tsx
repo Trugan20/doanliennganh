@@ -628,7 +628,12 @@ function AdminBookingForm({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState("");
 
   // Monthly Calendar Navigation & Filter states
-  const [calendarDate, setCalendarDate] = useState(new Date(2026, 4, 1)); // May 2026 as show in image, but can navigate
+  
+  const [calendarDate, setCalendarDate] = useState(() => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+
   const [filterMorning, setFilterMorning] = useState(true);
   const [filterAfternoon, setFilterAfternoon] = useState(true);
   const [filterEvening, setFilterEvening] = useState(true);
