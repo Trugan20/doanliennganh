@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import AdminSidebar from "../../components/layout/AdminSidebar";
 import { paymentApi, patientApi } from "../../services/api";
 import { useApi } from "../../hooks/useApi";
@@ -92,7 +92,6 @@ export default function AdminPayments() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   useEffect(() => {
@@ -360,12 +359,6 @@ export default function AdminPayments() {
         />
       )}
 
-      {/* QR Payment Modal */}
-      <QRPaymentModal
-        open={showQRModal}
-        onClose={() => setShowQRModal(false)}
-        onSuccess={() => { setShowQRModal(false); refreshAll(); }}
-      />
     </div>
   );
 }
@@ -807,10 +800,7 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
 }) {
   const [status, setStatus] = useState(payment.status);
   const [cashReceived, setCashReceived] = useState("");
-  const [qrData, setQrData] = useState<any>(null);
-  const [qrLoading, setQrLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [checkingTrans, setCheckingTrans] = useState(false);
   const [activeMethod, setActiveMethod] = useState(payment.method);
 
   const change = cashReceived && !isNaN(Number(cashReceived))
@@ -820,22 +810,8 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
   useEffect(() => {
     setStatus(payment.status);
     setCashReceived("");
-    setQrData(null);
-    setQrLoading(false);
-    setCheckingTrans(false);
     setActiveMethod(payment.method);
   }, [payment]);
-
-  // Generate QR for bank_transfer pending payments
-  useEffect(() => {
-    if (open && activeMethod === "bank_transfer" && status === "pending" && !qrData && !qrLoading) {
-      setQrLoading(true);
-      paymentApi.generateQR({ amount: payment.amount, invoiceNumber: payment.invoiceNumber })
-        .then((res) => { if (res.data?.success) setQrData(res.data.data); })
-        .catch(() => {})
-        .finally(() => setQrLoading(false));
-    }
-  }, [open, activeMethod, status]);
 
   // Poll in background
   useEffect(() => {
@@ -871,21 +847,6 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleVerifyQRPayment = async () => {
-    setCheckingTrans(true);
-    setTimeout(async () => {
-      try {
-        await paymentApi.confirmQR(payment._id);
-        setStatus("paid");
-        onUpdated();
-      } catch (err: any) {
-        alert(err.response?.data?.message || "Chưa nhận được giao dịch chuyển khoản VietQR khớp với mã hóa đơn này.");
-      } finally {
-        setCheckingTrans(false);
-      }
-    }, 1500);
   };
 
   const handleCashPayment = async () => {
@@ -932,16 +893,6 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
       setLoading(false);
     }
   };
-
-  const handlePrintQR = () => {
-    if (!qrData?.qrDataUrl) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`<html><head><title>In QR Thanh Toan</title><style>body{font-family:Arial;text-align:center;padding:40px;}h2{color:#003A70;}p{font-size:14px;color:#555;}img{border:4px solid #003A70;border-radius:12px;}.info{margin-top:16px;font-weight:bold;color:#059669;}</style></head><body><h2>Phong Kham Nha Khoa MIRAI</h2><p>Ma hoa don: ${payment.invoiceNumber}</p><p>Benh nhan: ${payment.patientName}</p><img src="${qrData.qrDataUrl}" width="300"/><p class="info">So tien: ${Number(qrData.amount).toLocaleString("vi-VN")} VND</p><p>STK: ${qrData.accountNo} - ${qrData.accountName} (${qrData.bankId})</p><p>Noi dung: ${qrData.addInfo}</p><script>window.print();<\/script></body></html>`);
-    win.document.close();
-  };
-
-
 
   if (!open) return null;
 
@@ -1079,7 +1030,7 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
                       : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
                   }`}
                 >
-                  🏦 Chuyển khoản VietQR
+                  🏦 Chuyển khoản
                 </button>
               </div>
 
@@ -1125,7 +1076,7 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
                 </div>
               )}
 
-              {/* BANK TRANSFER — QR code */}
+              {/* BANK TRANSFER — manual confirmation */}
               {activeMethod === "bank_transfer" && (
                 <div className="space-y-3">
                   <div className="bg-white border border-slate-200 rounded-xl p-4">
@@ -1133,80 +1084,21 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #003A70, #0055A4)" }}>
                         <span className="text-white font-black text-sm">🏦</span>
                       </div>
-                      <p className="font-bold text-slate-800 text-sm">Thanh toán QR chuyển khoản VietQR</p>
+                      <p className="font-bold text-slate-800 text-sm">Thanh toán chuyển khoản</p>
                     </div>
 
-                    {qrLoading ? (
-                      <div className="text-center py-6 text-slate-500 text-sm">Đang tạo mã QR...</div>
-                    ) : qrData ? (
-                      <div className="space-y-3">
-                        {/* QR Code */}
-                        <div className="bg-white rounded-xl p-3 text-center border border-slate-200 relative animate-scale-in">
-                          <img src={qrData.qrDataUrl} alt="QR" className="w-72 h-72 mx-auto rounded-xl" />
-                          <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none rounded-xl mx-auto w-72 h-72" />
-                          <p className="text-xs text-slate-400 mt-2">Quét mã QR bằng ứng dụng ngân hàng</p>
-                        </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                      Xác nhận thanh toán chuyển khoản bằng cách kiểm tra giao dịch thực tế hoặc xác nhận thủ công sau khi khách hàng chuyển tiền.
+                    </div>
 
-                        {/* Bank details */}
-                        <div className="bg-slate-50 rounded-xl overflow-hidden">
-                          <div className="px-4 py-2.5" style={{ background: "linear-gradient(135deg, #003A70 0%, #0055A4 100%)" }}>
-                            <p className="text-white text-xs font-bold uppercase">Thông tin tài khoản</p>
-                          </div>
-                          {[
-                            { label: "Ngân hàng", value: qrData.bankId || "BIDV" },
-                            { label: "Số tài khoản", value: qrData.accountNo || "1231270139" },
-                            { label: "Tên tài khoản", value: qrData.accountName || "Trần Quốc Huy" },
-                            { label: "Nội dung CK", value: qrData.addInfo },
-                          ].map((item) => (
-                            <div key={item.label} className="flex justify-between px-4 py-2.5 border-b border-slate-100 last:border-0">
-                              <span className="text-xs text-slate-400">{item.label}</span>
-                              <span className="text-xs font-bold text-slate-700">{item.value}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Realtime Status Bar */}
-                        <div className="flex items-center justify-center gap-2 bg-slate-50 rounded-xl py-2 px-3 border border-slate-100 text-xs text-slate-500">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 status-dot-pulse" />
-                          <span>Đang chờ giao dịch... Tự động nhận diện (3s)</span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <button onClick={handlePrintQR} className="py-2.5 rounded-xl font-semibold text-xs border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition">
-                              🖨️ In QR
-                            </button>
-                            <button
-                              onClick={handleVerifyQRPayment}
-                              disabled={checkingTrans || loading}
-                              className="py-2.5 rounded-xl font-bold text-xs text-white transition hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                              style={{ background: "linear-gradient(135deg, #0ea5e9, #0284c7)" }}
-                            >
-                              {checkingTrans ? (
-                                <>
-                                  <svg className="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                                  </svg>
-                                  Đang quét...
-                                </>
-                              ) : (
-                                <>🔍 Kiểm tra tự động</>
-                              )}
-                            </button>
-                          </div>
-                          <button
-                            onClick={handleConfirmPayment}
-                            disabled={loading || checkingTrans}
-                            className="w-full py-2.5 rounded-xl font-bold text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
-                          >
-                            {loading ? "Đang xác nhận..." : "✓ Xác nhận thủ công (Đã nhận tiền)"}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-slate-500 text-sm">Không thể tạo mã QR.</div>
-                    )}
+                    <button
+                      onClick={handleConfirmPayment}
+                      disabled={loading}
+                      className="w-full mt-3 py-3.5 rounded-xl font-bold text-sm transition-all hover:-translate-y-0.5 disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg, #16a34a, #15803d)", color: "white" }}
+                    >
+                      {loading ? "Đang xử lý..." : "✅ Xác nhận thanh toán chuyển khoản"}
+                    </button>
                   </div>
                 </div>
               )}
@@ -1273,652 +1165,3 @@ function PaymentDetailModal({ payment, open, onClose, onUpdated }: {
   );
 }
 
-// ─── QR Payment Modal ──────────────────────────────────────────────────────────
-function QRPaymentModal({ open, onClose, onSuccess }: {
-  open: boolean; onClose: () => void; onSuccess: () => void;
-}) {
-  const [step, setStep] = useState<"patient" | "receipt" | "success">("patient");
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [services, setServices] = useState<Array<{ name: string; price: number }>>([]);
-  const [serviceName, setServiceName] = useState("");
-  const [servicePrice, setServicePrice] = useState("");
-  const [reason, setReason] = useState("");
-  const [description, setDescription] = useState("");
-  const [createdPaymentId, setCreatedPaymentId] = useState<string | null>(null);
-  const [createdPayment, setCreatedPayment] = useState<any>(null);
-  const [qrData, setQrData] = useState<any>(null);
-  const [loadingPatients, setLoadingPatients] = useState(false);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
-  const [loadingQR, setLoadingQR] = useState(false);
-  const [confirmLoading, setConfirmLoading] = useState(false);
-  const [checkingTrans, setCheckingTrans] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setLoadingPatients(true);
-      patientApi.getAll().then((res) => {
-        const list = Array.isArray(res.data) ? res.data : [];
-        setPatients(list);
-      }).catch(() => {}).finally(() => setLoadingPatients(false));
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open) {
-      setStep("patient");
-      setSelectedPatient(null);
-      setSelectedAppointment(null);
-      setAppointments([]);
-      setServices([]);
-      setReason("");
-      setDescription("");
-      setServiceName("");
-      setServicePrice("");
-      setCreatedPaymentId(null);
-      setCreatedPayment(null);
-      setQrData(null);
-      setCheckingTrans(false);
-    }
-  }, [open]);
-
-  // Background polling for payment status
-  useEffect(() => {
-    let timer: any;
-    if (open && step === "receipt" && createdPaymentId) {
-      timer = setInterval(async () => {
-        try {
-          const res = await paymentApi.getById(createdPaymentId);
-          const current = res.data?.data || res.data;
-          if (current && current.status === "paid") {
-            setCreatedPayment(current);
-            setStep("success");
-            onSuccess();
-          }
-        } catch {}
-      }, 3000);
-    }
-    return () => clearInterval(timer);
-  }, [open, step, createdPaymentId]);
-
-  const loadAppointments = async (patientId: string) => {
-    setLoadingAppointments(true);
-    setAppointments([]);
-    setSelectedAppointment(null);
-    const { appointmentApi: aptApi } = await import("../../services/api");
-    try {
-      // Resolve patient name from the local patients list (avoids extra API call + ID mismatch)
-      const patient = patients.find((p) => p._id === patientId);
-      if (!patient) { setLoadingAppointments(false); return; }
-
-      const patientName = patient.name.trim().toLowerCase();
-      const res: any = await aptApi.getAll();
-      const paginated = res.data?.data ?? res.data;
-      const all: any[] = Array.isArray(paginated?.data)
-        ? paginated.data
-        : Array.isArray(paginated)
-        ? paginated
-        : [];
-      setAppointments(all.filter((a) =>
-        a.patientName?.trim().toLowerCase() === patientName
-      ));
-    } catch {} finally {
-      setLoadingAppointments(false);
-    }
-  };
-
-  const addService = () => {
-    if (!serviceName.trim()) return;
-    setServices([...services, { name: serviceName.trim(), price: Number(servicePrice) || 0 }]);
-    setServiceName("");
-    setServicePrice("");
-  };
-
-  const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i));
-
-  const totalFromAppointment = selectedAppointment ? selectedAppointment.fee : 0;
-  const total = totalFromAppointment + services.reduce((s, sv) => s + sv.price, 0);
-
-  const handleCreateReceiptAndQR = async () => {
-    if (!selectedPatient || total <= 0) {
-      alert("Vui lòng chọn bệnh nhân và nhập số tiền hợp lệ.");
-      return;
-    }
-    if (!reason.trim()) {
-      alert("Vui lòng nhập lí do thanh toán.");
-      return;
-    }
-    setLoadingQR(true);
-    try {
-      // 1. Create payment receipt (pending)
-      const paymentRes = await paymentApi.create({
-        patientId: selectedPatient._id,
-        appointmentId: selectedAppointment?._id || null,
-        amount: total,
-        method: "bank_transfer",
-        status: "pending",
-        description: description || `Thanh toán VietQR`,
-        services: selectedAppointment
-          ? [{ name: selectedAppointment.serviceName, price: selectedAppointment.fee }, ...services]
-          : services,
-        discount: 0,
-        tax: 0,
-        notes: "Phiếu thu VietQR",
-        reason: reason.trim(),
-      });
-      const newPayment = paymentRes.data?.data;
-      if (!newPayment?._id) throw new Error("Không tạo được phiếu thu");
-      setCreatedPaymentId(newPayment._id);
-      setCreatedPayment(newPayment);
-
-      // 2. Generate QR
-      const qrRes = await paymentApi.generateQR({
-        amount: total,
-        invoiceNumber: newPayment.invoiceNumber,
-        patientName: selectedPatient.name,
-        description: description || `Thanh toan ${newPayment.invoiceNumber}`,
-      });
-      const qr = qrRes.data?.data;
-      if (!qr) throw new Error("Không tạo được mã QR");
-      setQrData(qr);
-
-      // Refresh parent table immediately after payment is created
-      onSuccess();
-
-      setStep("receipt");
-    } catch (err: any) {
-      alert(err.response?.data?.message || err.message || "Lỗi khi tạo phiếu thu.");
-    } finally {
-      setLoadingQR(false);
-    }
-  };
-
-  const handleConfirmPayment = async () => {
-    if (!createdPaymentId) return;
-    setConfirmLoading(true);
-    try {
-      await paymentApi.confirmPayment(createdPaymentId, reason);
-      const res = await paymentApi.getById(createdPaymentId);
-      const current = res.data?.data || res.data;
-      setCreatedPayment(current || createdPayment);
-      setStep("success");
-      onSuccess();
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Xác nhận thất bại.");
-    } finally {
-      setConfirmLoading(false);
-    }
-  };
-
-  const handleVerifyQRPayment = async () => {
-    if (!createdPaymentId) return;
-    setCheckingTrans(true);
-    setTimeout(async () => {
-      try {
-        const confirmRes = await paymentApi.confirmQR(createdPaymentId);
-        const current = confirmRes.data?.data || confirmRes.data;
-        setCreatedPayment(current || createdPayment);
-        setStep("success");
-        onSuccess();
-      } catch (err: any) {
-        alert(err.response?.data?.message || "Chưa nhận được giao dịch chuyển khoản VietQR khớp với mã hóa đơn.");
-      } finally {
-        setCheckingTrans(false);
-      }
-    }, 1500);
-  };
-
-  const handlePrintQR = () => {
-    if (!qrData?.qrDataUrl || !createdPayment) return;
-    const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`<html><head><title>In QR Thanh Toan</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:40px;}h2{color:#003A70;}p{font-size:14px;color:#555;}img{border:4px solid #003A70;border-radius:12px;}.info{margin-top:16px;font-weight:bold;color:#059669;}.receipt{border:1px solid #ddd;padding:20px;max-width:400px;margin:0 auto;}</style></head><body><h2>Phong Kham Nha Khoa MIRAI</h2><p>Ma hoa don: ${createdPayment.invoiceNumber}</p><p>Benh nhan: ${selectedPatient?.name}</p><p>Lí do: ${reason}</p><hr/><img src="${qrData.qrDataUrl}" width="300"/><p class="info">So tien: ${total.toLocaleString("vi-VN")} VND</p><p>STK: ${qrData.accountNo} - ${qrData.accountName} (${qrData.bankId})</p><p>Noi dung: ${qrData.addInfo}</p><script>window.print();<\/script></body></html>`);
-    win.document.close();
-  };
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col my-auto overflow-hidden animate-scale-in">
-        {/* Header */}
-        <div
-          className="sticky top-0 px-6 py-4 border-b border-slate-200 flex items-center justify-between flex-shrink-0 z-10"
-          style={{ background: "linear-gradient(135deg, #003A70 0%, #0055A4 100%)" }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center text-lg">
-              🏦
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">Tạo phiếu thu & VietQR</h2>
-              <p className="text-blue-200 text-xs">
-                {step === "patient" ? "Bước 1: Chọn bệnh nhân & dịch vụ" : step === "receipt" ? "Bước 2: Quét mã VietQR" : "Thành công"}
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-blue-200 hover:text-white text-2xl font-light leading-none">✕</button>
-        </div>
-
-        <div className="p-6 space-y-5 overflow-y-auto flex-1 overscroll-contain" style={{ scrollbarWidth: "thin" }}>
-          {/* ── Step 1: Patient + Appointment + Services ── */}
-          {step === "patient" && (
-            <>
-              {/* Bank info banner */}
-              <div
-                className="rounded-xl p-4 text-white text-center"
-                style={{ background: "linear-gradient(135deg, #003A70 0%, #0055A4 100%)" }}
-              >
-                <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center mx-auto mb-2 text-lg">
-                  🏦
-                </div>
-                <p className="font-bold text-sm">Chuyển khoản VietQR</p>
-                <p className="text-blue-200 text-xs mt-1">Hệ thống VietQR tự động đồng bộ hóa đơn</p>
-              </div>
-
-              {/* Select Patient */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Chọn bệnh nhân <span className="text-red-500">*</span>
-                </label>
-                <select
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500 transition"
-                  style={{ background: "#fafafa" }}
-                  value={selectedPatient?._id || ""}
-                  onChange={(e) => {
-                    const p = patients.find((x) => x._id === e.target.value) || null;
-                    setSelectedPatient(p);
-                    if (p) loadAppointments(p._id);
-                    else { setAppointments([]); setSelectedAppointment(null); }
-                  }}
-                >
-                  <option value="">— Chọn bệnh nhân —</option>
-                  {patients.map((p) => (
-                    <option key={p._id} value={p._id}>{p.name} ({p.email})</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Select Appointment (linked to patient) */}
-              {selectedPatient && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Liên kết lịch hẹn (tùy chọn)
-                  </label>
-                  {loadingAppointments ? (
-                    <div className="flex items-center gap-2 text-sm text-slate-400 py-3">
-                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                      </svg>
-                      Đang tải lịch hẹn...
-                    </div>
-                  ) : appointments.length > 0 ? (
-                    <div className="space-y-2">
-                      {appointments.map((a) => (
-                        <div
-                          key={a._id}
-                          onClick={() => setSelectedAppointment(selectedAppointment?._id === a._id ? null : a)}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${
-                            selectedAppointment?._id === a._id
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 bg-white hover:border-slate-300"
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                            selectedAppointment?._id === a._id ? "border-emerald-500 bg-emerald-500" : "border-slate-300"
-                          }`}>
-                            {selectedAppointment?._id === a._id && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-slate-800">{a.serviceName}</p>
-                            <p className="text-xs text-slate-400">{a.date} lúc {a.time}</p>
-                            <p className={`text-xs font-bold mt-1 ${a.isPaid ? "text-emerald-600" : "text-amber-600"}`}>
-                              {a.isPaid ? "Đã thanh toán" : `${a.fee?.toLocaleString("vi-VN")} đ — Chưa thanh toán`}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-400 py-2">Không có lịch hẹn nào cho bệnh nhân này.</p>
-                  )}
-                </div>
-              )}
-
-              {/* Manual Services */}
-              {selectedPatient && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Dịch vụ bổ sung (thêm dịch vụ nếu cần)
-                  </label>
-                  <div className="space-y-2">
-                    {services.map((s, i) => (
-                      <div key={i} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
-                        <span className="text-sm text-slate-700">{s.name}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-sky-600">{s.price.toLocaleString("vi-VN")} đ</span>
-                          <button onClick={() => removeService(i)} className="w-5 h-5 rounded bg-red-100 text-red-500 hover:bg-red-200 flex items-center justify-center text-xs">×</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      className="flex-1 px-3 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500"
-                      placeholder="Tên dịch vụ"
-                      value={serviceName}
-                      onChange={(e) => setServiceName(e.target.value)}
-                      style={{ background: "#fafafa" }}
-                    />
-                    <input
-                      type="number"
-                      className="w-28 px-3 py-2 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500"
-                      placeholder="Giá (đ)"
-                      value={servicePrice}
-                      onChange={(e) => setServicePrice(e.target.value)}
-                      style={{ background: "#fafafa" }}
-                    />
-                    <button onClick={addService} className="px-3 py-2 bg-emerald-100 text-emerald-700 rounded-xl font-semibold text-sm hover:bg-emerald-200 transition">+</button>
-                  </div>
-                </div>
-              )}
-
-              {/* Reason */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Lí do thanh toán <span className="text-red-500">*</span>
-                </label>
-                <input
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500 transition"
-                  placeholder="VD: Thanh toán khám răng, Trồng implant,..."
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  style={{ background: "#fafafa" }}
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Nội dung ghi chú</label>
-                <textarea
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500 transition resize-none h-20"
-                  placeholder="Ghi chú thêm (tùy chọn)..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  style={{ background: "#fafafa" }}
-                />
-              </div>
-
-              {/* Total preview */}
-              {(total > 0 || selectedAppointment) && (
-                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200 text-center">
-                  <p className="text-xs text-emerald-600 font-semibold uppercase tracking-wider">Tổng cộng</p>
-                  <p className="text-2xl font-black text-emerald-700 mt-1">{total.toLocaleString("vi-VN")} đ</p>
-                  {selectedAppointment && (
-                    <p className="text-xs text-emerald-500 mt-1">Bao gồm phí lịch hẹn: {selectedAppointment.fee?.toLocaleString("vi-VN")} đ + dịch vụ bổ sung</p>
-                  )}
-                </div>
-              )}
-
-              <button
-                onClick={handleCreateReceiptAndQR}
-                disabled={loadingQR || !selectedPatient || total <= 0}
-                className="w-full py-3.5 rounded-xl font-bold text-white text-sm transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 14px rgba(16,185,129,0.4)" }}
-              >
-                {loadingQR ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    Đang tạo phiếu thu & mã QR...
-                  </span>
-                ) : (
-                  "Tạo phiếu thu & mã QR VietQR"
-                )}
-              </button>
-            </>
-          )}
-
-          {/* ── Step 2: Receipt Summary + QR ── */}
-          {step === "receipt" && createdPayment && (
-            <>
-              {/* Receipt summary */}
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <div
-                  className="px-5 py-4 text-white"
-                  style={{ background: "linear-gradient(135deg, #003A70 0%, #0055A4 100%)" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center text-lg">
-                      🏦
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm">PHIẾU THU</p>
-                      <p className="text-blue-200 text-xs font-mono">{createdPayment.invoiceNumber}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <p className="text-xs text-slate-400 font-semibold uppercase">Bệnh nhân</p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5">{selectedPatient?.name}</p>
-                      <p className="text-xs text-slate-400">{selectedPatient?.email}</p>
-                    </div>
-                    <div className="bg-slate-50 rounded-lg p-3">
-                      <p className="text-xs text-slate-400 font-semibold uppercase">Ngày tạo</p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5">
-                        {new Date(createdPayment.createdAt).toLocaleDateString("vi-VN")}
-                      </p>
-                      <p className="text-xs text-slate-400">bởi {createdPayment.recordedByName}</p>
-                    </div>
-                  </div>
-
-                  {/* Linked appointment */}
-                  {selectedAppointment && (
-                    <div className="bg-sky-50 rounded-lg p-3 border border-sky-100">
-                      <p className="text-xs text-sky-600 font-semibold uppercase">Lịch hẹn liên kết</p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5">{selectedAppointment.serviceName}</p>
-                      <p className="text-xs text-slate-500">{selectedAppointment.date} lúc {selectedAppointment.time}</p>
-                    </div>
-                  )}
-
-                  {/* Services */}
-                  {createdPayment.services?.length > 0 && (
-                    <div>
-                      <p className="text-xs text-slate-400 font-semibold uppercase mb-2">Dịch vụ</p>
-                      {createdPayment.services.map((s: any, i: number) => (
-                        <div key={i} className="flex justify-between bg-slate-50 rounded-lg px-3 py-2 mb-1">
-                          <span className="text-sm text-slate-700">{s.name}</span>
-                          <span className="text-sm font-semibold text-slate-800">{s.price.toLocaleString("vi-VN")} đ</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Reason */}
-                  {reason && (
-                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                      <p className="text-xs text-amber-600 font-semibold uppercase">Lí do thanh toán</p>
-                      <p className="text-sm font-bold text-amber-800 mt-0.5">{reason}</p>
-                    </div>
-                  )}
-
-                  {/* Total */}
-                  <div
-                    className="flex justify-between items-center rounded-xl p-4 text-white"
-                    style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
-                  >
-                    <span className="font-bold text-sm">TỔNG CỘNG</span>
-                    <span className="text-2xl font-black">{total.toLocaleString("vi-VN")} đ</span>
-                  </div>
-
-                  {/* Payment method */}
-                  <div className="flex items-center justify-between bg-slate-50 rounded-lg px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded bg-amber-400 flex items-center justify-center text-xs">
-                        🏦
-                      </div>
-                      <span className="text-sm font-semibold text-slate-700">QR Chuyển khoản VietQR</span>
-                    </div>
-                    <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Chờ thanh toán</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* QR Code */}
-              {qrData && (
-                <>
-                  <div className="bg-slate-50 rounded-xl p-6 text-center border border-slate-100 relative">
-                    <img src={qrData.qrDataUrl} alt="QR Code" className="w-56 h-56 mx-auto rounded-2xl animate-scale-in" />
-                    <div className="absolute inset-0 bg-emerald-500/5 pointer-events-none rounded-xl mx-auto w-56 h-56" />
-                    <p className="text-xs text-slate-400 mt-3">Quét mã bằng ứng dụng ngân hàng của bạn</p>
-                  </div>
-
-                  {/* Bank info */}
-                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                    <div
-                      className="px-4 py-2.5"
-                      style={{ background: "linear-gradient(135deg, #003A70 0%, #0055A4 100%)" }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded bg-amber-400 flex items-center justify-center text-xs">
-                          🏦
-                        </div>
-                        <p className="text-white text-xs font-bold uppercase tracking-wider">Thông tin tài khoản - {qrData.bankId || "Ngân hàng"}</p>
-                      </div>
-                    </div>
-                    {[
-                      { label: "Ngân hàng", value: qrData.bankId || "BIDV" },
-                      { label: "Số tài khoản", value: qrData.accountNo || "1231270139" },
-                      { label: "Tên tài khoản", value: qrData.accountName || "Trần Quốc Huy" },
-                      { label: "Nội dung CK", value: qrData.addInfo },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between px-4 py-3 border-b border-slate-100 last:border-0">
-                        <span className="text-xs font-medium text-slate-400">{item.label}</span>
-                        <span className="text-sm font-bold text-slate-700">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Instructions */}
-                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                    <p className="text-sm font-bold text-blue-700 mb-2">Hướng dẫn thanh toán:</p>
-                    <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
-                      <li>Mở ứng dụng Ngân hàng di động bất kỳ</li>
-                      <li>Chọn tính năng <strong>Quét mã QR</strong></li>
-                      <li>Quét mã QR bên trên</li>
-                      <li>Nhập đúng số tiền: <strong>{total.toLocaleString("vi-VN")} VND</strong></li>
-                      <li>Xác nhận thanh toán</li>
-                    </ol>
-                  </div>
-                </>
-              )}
-
-              {/* Realtime Status Bar */}
-              <div className="flex items-center justify-center gap-2 bg-slate-50 rounded-xl py-2.5 px-3 border border-slate-100 text-xs text-slate-500">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 status-dot-pulse" />
-                <span>Đang chờ chuyển khoản... Tự động nhận diện (3s)</span>
-              </div>
-
-              {/* Action buttons */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setStep("patient")}
-                    className="py-2.5 rounded-xl font-semibold text-xs border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition"
-                  >
-                    ← Quay lại
-                  </button>
-                  <button
-                    onClick={handlePrintQR}
-                    className="py-2.5 rounded-xl font-semibold text-xs bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
-                  >
-                    🖨️ In QR
-                  </button>
-                </div>
-
-                <button
-                  onClick={handleVerifyQRPayment}
-                  disabled={checkingTrans || confirmLoading}
-                  className="w-full py-3 rounded-xl font-bold text-xs text-white transition hover:-translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-md shadow-sky-100"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #0284c7)" }}
-                >
-                  {checkingTrans ? (
-                    <>
-                      <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                      </svg>
-                      Đang tra soát tài khoản ngân hàng...
-                    </>
-                  ) : (
-                    <>🔍 Kiểm tra giao dịch tự động</>
-                  )}
-                </button>
-
-                <button
-                  onClick={handleConfirmPayment}
-                  disabled={confirmLoading || checkingTrans}
-                  className="w-full py-2.5 rounded-xl font-bold text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
-                >
-                  {confirmLoading ? "Đang xác nhận..." : "✓ Xác nhận thủ công (Đã nhận tiền)"}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ── Step 3: Success Screen ── */}
-          {step === "success" && createdPayment && (
-            <div className="space-y-5 text-center py-4 animate-bounce-in">
-              <div className="w-20 h-20 rounded-full bg-emerald-100 border-4 border-emerald-500 flex items-center justify-center mx-auto shadow-md">
-                <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-black text-emerald-700">Thanh toán thành công!</h3>
-                <p className="text-sm text-slate-500">Hệ thống đã nhận đủ số tiền thanh toán.</p>
-              </div>
-
-              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 text-left text-xs space-y-1.5 animate-scale-in">
-                <p className="text-slate-500 font-bold uppercase tracking-wider mb-2">Thông tin hóa đơn</p>
-                <p className="text-slate-600">Mã hóa đơn: <strong className="font-mono text-slate-800 text-sm">{createdPayment.invoiceNumber}</strong></p>
-                <p className="text-slate-600">Khách hàng: <strong className="text-slate-800">{selectedPatient?.name}</strong></p>
-                <p className="text-slate-600">Số tiền: <strong className="text-slate-800">{total.toLocaleString("vi-VN")} đ</strong></p>
-                <p className="text-slate-600">Phương thức: <strong className="text-slate-800">Chuyển khoản VietQR</strong></p>
-                <p className="text-slate-600">Người lập phiếu: <strong className="text-slate-800">{createdPayment.recordedByName || "Hệ thống"}</strong></p>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => handlePrintInvoice(createdPayment)}
-                  className="w-full py-3 rounded-xl font-bold text-white text-sm transition hover:-translate-y-0.5 shadow-md flex items-center justify-center gap-1.5"
-                  style={{ background: "linear-gradient(135deg, #0ea5e9, #0284c7)" }}
-                >
-                  🖨️ In hóa đơn thanh toán
-                </button>
-                <button
-                  onClick={onClose}
-                  className="w-full py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 text-sm transition"
-                >
-                  Đóng cửa sổ
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}

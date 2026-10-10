@@ -11,7 +11,6 @@ const {
   remove,
   confirmPayment,
 } = require("../controllers/paymentController");
-const { generateQR, confirmQRPayment } = require("../controllers/qrPaymentController");
 const { auth, authorize } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const Joi = require("joi");
@@ -64,13 +63,6 @@ router.get("/stats", auth, authorize("admin"), getStats);
 router.get("/:id", auth, authorize("admin", "doctor"), getById);
 router.put("/:id", auth, authorize("admin", "doctor"), validate(updateSchema), update);
 router.delete("/:id", auth, authorize("admin"), remove);
-
-// ── QR Payment routes ──────────────────────────────────────────────────────────
-// POST /api/payments/qr/generate - Generate QR code for MBBank payment (admin + doctor + patient)
-router.post("/qr/generate", auth, authorize("admin", "doctor", "patient"), generateQR);
-
-// POST /api/payments/qr/confirm - Admin/doctor confirms QR transfer received
-router.post("/qr/confirm", auth, authorize("admin", "doctor"), confirmQRPayment);
 
 // POST /api/payments/confirm - Admin confirms a pending payment as paid
 router.post("/confirm", auth, authorize("admin", "doctor"), confirmPayment);

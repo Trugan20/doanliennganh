@@ -8,14 +8,8 @@ const Service = require("../models/Service");
 const Payment = require("../models/Payment");
 const { sendSuccess, sendError, sendPaginated } = require("../utils/response");
 const { getPagination, buildSort } = require("../utils/pagination");
-const { buildPaymentQR, PAYMENT } = require("../config/payment");
 
 const ALLOWED_SORT = ["date", "time", "status", "createdAt"];
-
-// Aliases for backward compatibility with existing qrData response
-const ACCOUNT_NO = PAYMENT.ACCOUNT_NO;
-const ACCOUNT_NAME = PAYMENT.ACCOUNT_NAME;
-const BANK_NAME = PAYMENT.BANK_NAME;
 
 // GET /api/appointments  [admin, doctor]
 const getAll = async (req, res) => {
@@ -523,7 +517,6 @@ const complete = async (req, res) => {
 
     // ── Create Payment record ───────────────────────────────────────────────────
     let payment = null;
-    let qrData = null;
 
     if (fee > 0) {
       // Count existing payments this month for invoice number (using safe Date constructor)
@@ -567,8 +560,6 @@ const complete = async (req, res) => {
         recordedByName: req.user.name,
       });
 
-      // Cash payment doesn't generate QR codes
-      qrData = null;
     }
 
     await appointment.populate([
@@ -580,9 +571,8 @@ const complete = async (req, res) => {
     return sendSuccess(res, 200, "Appointment completed", {
       appointment,
       payment,
-      qrData,
       message: fee > 0
-        ? `Da hoan thanh kham va tao phieu thu ${fee.toLocaleString("vi-VN")} VND. Ma QR da duoc tao.`
+        ? `Da hoan thanh kham va tao phieu thu ${fee.toLocaleString("vi-VN")} VND.`
         : "Da hoan thanh kham (khong co phi kham).",
     });
   } catch (err) {

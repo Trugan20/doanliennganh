@@ -166,33 +166,6 @@ export default function PatientProfile() {
             )}
           </div>
 
-          {/* Health Summary */}
-          <div className="card p-6 border border-slate-100 animate-fade-in stagger-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                style={{ background: "linear-gradient(135deg, #f43f5e, #e11d48)" }}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-                </svg>
-              </div>
-              <h3 className="text-base font-bold text-slate-800">Tóm tắt sức khỏe</h3>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Nhóm máu", value: "O+", icon: "🩸", color: "#ef4444", bg: "bg-red-50" },
-                { label: "Dị ứng", value: "Không", icon: "✅", color: "#22c55e", bg: "bg-green-50" },
-                { label: "Lần khám cuối", value: "2024-02-15", icon: "📅", color: "#0ea5e9", bg: "bg-blue-50" },
-              ].map(({ label, value, icon, color, bg }) => (
-                <div key={label} className={`${bg} rounded-2xl p-4 text-center transition hover:-translate-y-1 hover:shadow-md cursor-default`}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 text-xl">
-                    {icon}
-                  </div>
-                  <p className="font-black text-base" style={{ color }}>{value}</p>
-                  <p className="text-xs text-slate-500 font-medium mt-0.5">{label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

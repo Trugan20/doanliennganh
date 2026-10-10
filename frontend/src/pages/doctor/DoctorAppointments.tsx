@@ -78,10 +78,8 @@ export default function DoctorAppointments() {
     }).catch(err => console.error("Error loading day-offs:", err));
   }, []);
 
-  // Complete + QR modal state
+  // Complete appointment state
   const [completingId, setCompletingId] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [completeResult, setCompleteResult] = useState<any>(null);
 
   // New exam form states
   const [showExamModal, setShowExamModal] = useState(false);
@@ -123,30 +121,13 @@ export default function DoctorAppointments() {
   const handleComplete = async (apt: Appointment) => {
     try {
       setCompletingId(apt.id);
-      const res = await appointmentApi.complete(apt.id, {});
-      const result = res.data?.data;
-      setCompleteResult(result);
+      await appointmentApi.complete(apt.id, {});
       setShowModal(false);
       refetch();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Khong the hoan thanh lich hen.");
     } finally {
       setCompletingId(null);
-    }
-  };
-
-  const handleConfirmPayment = async (paymentId: string) => {
-    setConfirmingId(paymentId);
-    try {
-      const { paymentApi: pApi } = await import("../../services/api");
-      await pApi.confirmQR(paymentId);
-      toast.success("Da xac nhan thanh toan thanh cong!");
-      setCompleteResult(null);
-      refetch();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Xac nhan that bai.");
-    } finally {
-      setConfirmingId(null);
     }
   };
 

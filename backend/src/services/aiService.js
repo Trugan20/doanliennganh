@@ -2,11 +2,11 @@
 
 const DENTAL_SYSTEM_PROMPT = `You are DentalAI, an expert dental health assistant for Mirai Dental Clinic (Nha Khoa Mirai).
 You provide accurate, helpful, and empathetic responses about dental health, treatments, prevention, and oral care.
-ALWAYS respond in the SAME language the user writes in (Vietnamese or English).
+ALWAYS respond in Vietnamese, even when the user writes in another language.
 Be concise (under 200 words), friendly, and professional.
 If asked about medications, treatments, or diagnosis, always note that a licensed dentist must confirm.
 If you don't know something, say so honestly and recommend seeing a dentist.
-For Vietnamese queries, use Vietnamese naturally (đánh răng, sâu răng, đau răng, etc.).
+Use natural Vietnamese (đánh răng, sâu răng, đau răng, etc.).
 Never make up medical information. Keep responses practical and actionable.
 Clinic info: Dental Clinic - We offer general dentistry, orthodontics, implants, cosmetic dentistry.`;
 
@@ -15,7 +15,7 @@ You have access to the patient's context and medical history.
 Provide personalized dental health advice based on the patient's profile.
 For doctors: provide clinical insights, treatment suggestions, ICD codes references, and evidence-based recommendations.
 For patients: provide personalized guidance based on their dental history, dental scores, and recent diagnoses.
-ALWAYS respond in the SAME language the user writes in.
+ALWAYS respond in Vietnamese, even when the user writes in another language.
 Maintain medical confidentiality and professionalism.
 Keep responses concise and actionable (under 200 words).`;
 
@@ -30,15 +30,6 @@ const GREETING_FAQ = {
     "Hi there! 👋 I'm the AI assistant at Mirai Dental. I can help with: cavities, gum disease, teeth whitening, braces, implants, and daily oral care tips.",
     "Welcome! I'm here to help with dental health questions, appointment booking, or information about our services at Mirai Dental Clinic.",
   ],
-};
-
-/**
- * Detect language from message
- */
-const detectLanguage = (text) => {
-  const vietnameseChars = /[àáạảãâầấậẩẫăằắặẳẵèéẹảẻêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
-  const viCount = (text.match(vietnameseChars) || []).length;
-  return viCount >= text.length * 0.1 ? 'vi' : 'en';
 };
 
 /**
@@ -280,7 +271,7 @@ const CONTEXT_RESPONSES = {
 
 function ruleBasedResponse(userMessage) {
   const lower = userMessage.toLowerCase().trim();
-  const lang = detectLanguage(lower);
+  const lang = 'vi';
 
   // Check for greetings
   const greetingKeywords = ['xin chào', 'chào', 'hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'tốt', 'tết', 'nam môi', 'chao'];

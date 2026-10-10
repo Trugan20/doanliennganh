@@ -239,14 +239,6 @@ export const paymentApi = {
   update: (id: string, data: object) => api.put(`/payments/${id}`, data),
   delete: (id: string) => api.delete(`/payments/${id}`),
   getStats: () => api.get("/payments/stats"),
-  generateQR: (data: {
-    amount: number;
-    invoiceNumber?: string;
-    patientName?: string;
-    description?: string;
-  }) => api.post("/payments/qr/generate", data),
-  confirmQR: (paymentId: string) =>
-    api.post("/payments/qr/confirm", { paymentId }),
   confirmPayment: (paymentId: string, reason?: string) =>
     api.post("/payments/confirm", { paymentId, reason }),
 };
