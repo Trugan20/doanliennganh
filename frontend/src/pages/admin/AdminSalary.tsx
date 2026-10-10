@@ -68,7 +68,7 @@ export default function AdminSalary() {
   const [loadingDoctors, setLoadingDoctors] = useState(false);
 
   // --- Configuration states ---
-  const [basicHourlyRate, setBasicHourlyRate] = useState<number>(210000);
+  const [basicHourlyRate, setBasicHourlyRate] = useState<number>(250000);
   const [degreeCoefficients, setDegreeCoefficients] = useState<Record<string, number>>({
     "Đại học": 1.2,
     "Thạc sỹ": 1.5,
@@ -948,7 +948,7 @@ export default function AdminSalary() {
                       defaultValue={basicHourlyRate}
                       id="input_basic_hourly_rate"
                       className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl text-base font-bold focus:outline-none focus:border-sky-500 transition"
-                      placeholder="Ví dụ: 210000"
+                      placeholder="Ví dụ: 250000"
                     />
                     <button
                       onClick={() => {

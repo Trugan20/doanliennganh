@@ -65,7 +65,7 @@ export default function DoctorSalary() {
   const [loadingList, setLoadingList] = useState(false);
 
   // ─── Configuration from localStorage (shared with AdminSalary) ───
-  const [basicHourlyRate, setBasicHourlyRate] = useState<number>(210000);
+  const [basicHourlyRate, setBasicHourlyRate] = useState<number>(250000);
   const [degreeCoefficients, setDegreeCoefficients] = useState<Record<string, number>>({
     "Đại học": 1.2,
     "Thạc sỹ": 1.5,

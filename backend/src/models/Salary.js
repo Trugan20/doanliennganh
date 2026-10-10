@@ -31,7 +31,7 @@ const salarySchema = new mongoose.Schema(
     // Configuration parameters
     basicHourlyRate: {
       type: Number,
-      default: 210000,
+      default: 250000,
       min: 0,
     },
     degreeCoefficient: {

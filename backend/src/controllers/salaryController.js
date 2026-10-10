@@ -95,7 +95,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       workingHours * (shiftMultiplier + shiftTotalDifficulty);
 
     // Calculate shift amount = equivalent_hours * degree_coefficient * basic_hourly_rate
-    const rate = basicHourlyRate || 210000;
+    const rate = basicHourlyRate || 250000;
     const coefficient = degreeCoefficient || 1.2;
     const shiftAmount = Math.round(equivalentHours * coefficient * rate);
 
@@ -133,7 +133,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       doctorName: doctor.name,
       month: month,
       year: year,
-      basicHourlyRate: basicHourlyRate || 210000,
+      basicHourlyRate: basicHourlyRate || 250000,
       degreeCoefficient: degreeCoefficient || 1.2,
       totalShifts: shifts.length,
       shiftDetails: shiftDetails,
@@ -145,7 +145,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
     });
   } else {
     // Update existing salary record
-    salary.basicHourlyRate = basicHourlyRate || 210000;
+    salary.basicHourlyRate = basicHourlyRate || 250000;
     salary.degreeCoefficient = degreeCoefficient || 1.2;
     salary.totalShifts = shifts.length;
     salary.shiftDetails = shiftDetails;
@@ -261,7 +261,7 @@ exports.getSalaryDetail = asyncHandler(async (req, res) => {
     });
 
     const equivalentHours = workingHours * (shiftMultiplier + shiftTotalDifficulty);
-    const rate = salary.basicHourlyRate || 210000;
+    const rate = salary.basicHourlyRate || 250000;
     const coefficient = salary.degreeCoefficient || 1.2;
     const shiftAmount = Math.round(equivalentHours * coefficient * rate);
 
