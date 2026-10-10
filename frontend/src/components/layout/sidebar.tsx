@@ -41,7 +41,6 @@ const doctorNav: NavItem[] = [
   { label: "Bệnh án", path: "/doctor/records", icon: "📋" },
   { label: "Hình ảnh", path: "/doctor/images", icon: "🖼️" },
   { label: "Tin nhắn", path: "/doctor/chat", icon: "💬" },
-  { label: "Video Call", path: "/video-call", icon: "📹" },
   { label: "Ca trực", path: "/doctor/shifts", icon: "⏰" },
   { label: "Bảng lương", path: "/doctor/salary", icon: "💰" },
   { label: "Hồ sơ cá nhân", path: "/doctor/profile", icon: "👤" },
@@ -55,7 +54,6 @@ const patientNav: NavItem[] = [
   { label: "Hình ảnh", path: "/patient/images", icon: "🖼️" },
   { label: "Thanh toán", path: "/patient/payments", icon: "💳" },
   { label: "Tin nhắn", path: "/patient/chat", icon: "💬" },
-  { label: "Video Call", path: "/video-call", icon: "📹" },
   { label: "Hồ sơ cá nhân", path: "/patient/profile", icon: "👤" },
 ];
 

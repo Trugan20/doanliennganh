@@ -9,7 +9,6 @@ const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
 const fs = require("fs");
-const { setupVideoCallSocket } = require("./src/socket/videoCallSocket");
 const { setupSalarySocket } = require("./src/socket/salarySocket");
 
 const connectDB = require("./src/config/db");
@@ -38,9 +37,6 @@ const io = new SocketIOServer(server, {
   },
 });
 const PORT = process.env.PORT || 5000;
-
-// Setup WebRTC signaling
-setupVideoCallSocket(io);
 
 // Setup Salary real-time notifications
 setupSalarySocket(io);
@@ -155,7 +151,6 @@ server.listen(PORT, () => {
   console.log(`   Mode:     ${process.env.NODE_ENV}`);
   console.log(`   MongoDB:  ${process.env.MONGODB_URI}`);
   console.log(`   Uploads:  ${uploadDir}`);
-  console.log(`   Socket:   WebRTC signaling active`);
   console.log(`   Health:   http://localhost:${PORT}/api/health\n`);
 });
 

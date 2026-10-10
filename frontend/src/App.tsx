@@ -45,8 +45,6 @@ import PatientImages from "./pages/patient/PatientImages";
 import PatientDentalScore from "./pages/patient/PatientDentalScore";
 import PatientChat from "./pages/patient/PatientChat";
 
-import VideoCallPage from "./pages/VideoCallPage";
-
 // Redirect authenticated users away from auth pages
 function LoginRedirect() {
   const { isAuthenticated, role } = useAuth();
@@ -315,14 +313,6 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/video-call"
-        element={
-          <ProtectedRoute>
-            <VideoCallPage />
-          </ProtectedRoute>
-        }
-      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
