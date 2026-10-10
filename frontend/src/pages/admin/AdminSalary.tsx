@@ -1241,7 +1241,7 @@ export default function AdminSalary() {
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Ngày làm việc</label>
                         <input
@@ -1307,7 +1307,7 @@ export default function AdminSalary() {
                       </div>
 
                       {sessionPatients.map((pat, idx) => (
-                        <div key={idx} className="flex gap-2 items-center bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                        <div key={idx} className="flex flex-wrap gap-2 items-center bg-slate-50/50 p-2 rounded-lg border border-slate-100">
                           <input
                             type="text"
                             placeholder="Tên BN"
@@ -1317,7 +1317,7 @@ export default function AdminSalary() {
                               list[idx].name = e.target.value;
                               setSessionPatients(list);
                             }}
-                            className="flex-1 px-2.5 py-1.5 border rounded text-xs focus:outline-none focus:border-sky-500"
+                            className="flex-1 min-w-[140px] px-2.5 py-1.5 border rounded text-xs focus:outline-none focus:border-sky-500"
                             required
                           />
                           <select
@@ -1327,7 +1327,7 @@ export default function AdminSalary() {
                               list[idx].difficulty = Number(e.target.value);
                               setSessionPatients(list);
                             }}
-                            className="px-1 py-1.5 border rounded text-xs focus:outline-none"
+                            className="shrink-0 px-1 py-1.5 border rounded text-xs focus:outline-none"
                           >
                             <option value="0.0">Normal (0)</option>
                             <option value="0.2">Medium (0.2)</option>
