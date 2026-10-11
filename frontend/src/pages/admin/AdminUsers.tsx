@@ -294,6 +294,8 @@ function UserForm({
           </svg>
           <input
             type="email"
+            autoComplete="off"
+            name="new-user-email"
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all"
             placeholder="Nhập địa chỉ email"
             value={form.email}
@@ -311,6 +313,8 @@ function UserForm({
             </svg>
             <input
               type="password"
+              autoComplete="new-password"
+              name="new-user-password"
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 transition-all"
               placeholder="Nhập mật khẩu (để trống để dùng: Password@123)"
               value={form.password}
