@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import DoctorSidebar from "../../components/layout/DoctorSidebar";
-import { imageApi, patientApi } from "../../services/api";
+import { imageApi, doctorApi } from "../../services/api";
 import { useApi } from "../../hooks/useApi";
-import { useToast } from "../../hooks/useToast";
+import { useToastContext } from "../../context/ToastContext";
+import ImageViewer from "../../components/ui/ImageViewer";
 import type { DentalImage } from "../../types";
 
 interface Patient {
@@ -23,6 +24,9 @@ export default function DoctorImages() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<DentalImage | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [uploadType, setUploadType] = useState<"xray" | "photo" | "scan">("photo");
+  const [description, setDescription] = useState("");
+  const [patientFilter, setPatientFilter] = useState("all");
   const fileRef = useRef<HTMLInputElement>(null);
   const [filter, setFilter] = useState("all");
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -30,44 +34,55 @@ export default function DoctorImages() {
   const [selectedPatient, setSelectedPatient] = useState("");
   const [loadingPatients, setLoadingPatients] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const { toast } = useToast();
+  const { toast } = useToastContext();
+
+  const patientIdOf = (i: any): string =>
+    typeof i.patient === "object" && i.patient ? String(i.patient._id || i.patient.id || "") : String(i.patient || "");
+  const dateOf = (i: any): string | undefined => i.uploadedAt || i.createdAt;
 
   const filtered = (images || []).filter(
-    (i) => filter === "all" || i.type === filter,
+    (i) =>
+      (filter === "all" || i.type === filter) &&
+      (patientFilter === "all" || patientIdOf(i) === patientFilter),
   );
 
+  // Chỉ lấy những bệnh nhân mà bác sĩ này đã khám
   useEffect(() => {
-    if (showUploadForm) {
-      const fetchPatients = async () => {
-        setLoadingPatients(true);
-        try {
-          const res = await patientApi.getAll();
-          setPatients(res.data.data || []);
-        } catch (err) {
-          console.error("Failed to load patients:", err);
-          toast.error("Failed to load patients");
-        } finally {
-          setLoadingPatients(false);
-        }
-      };
-      fetchPatients();
-    }
-  }, [showUploadForm]);
+    const fetchPatients = async () => {
+      setLoadingPatients(true);
+      try {
+        const res = await doctorApi.getExaminedPatients();
+        setPatients(res.data?.data || []);
+      } catch (err) {
+        console.error("Failed to load patients:", err);
+        toast.error("Không tải được danh sách bệnh nhân đã khám");
+      } finally {
+        setLoadingPatients(false);
+      }
+    };
+    fetchPatients();
+  }, []);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadFile = async (file: File) => {
     if (!selectedPatient) {
-      toast.error("Vui lòng chọn bệnh nhân");
+      toast.error("Vui lòng chọn bệnh nhân trước");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Chỉ hỗ trợ file hình ảnh");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ảnh vượt quá 10MB");
       return;
     }
 
     setUploading(true);
-    const fd = new FormData();
-    fd.append("image", file);
-    fd.append("type", "photo");
+  const fd = new FormData();
     fd.append("patientId", selectedPatient);
+    fd.append("type", uploadType);
+    fd.append("description", description);
+    fd.append("image", file);
 
     try {
       await imageApi.upload(fd);
@@ -75,12 +90,20 @@ export default function DoctorImages() {
       refetch();
       setShowUploadForm(false);
       setSelectedPatient("");
-      if (fileRef.current) fileRef.current.value = "";
+      setDescription("");
+      setUploadType("photo");
     } catch (err: any) {
+      console.error(err);
       toast.error(err.response?.data?.message || "Tải lên thất bại");
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -93,35 +116,11 @@ export default function DoctorImages() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      if (!selectedPatient) {
-        toast.error("Vui lòng chọn bệnh nhân trước");
-        return;
-      }
-      setUploading(true);
-      const fd = new FormData();
-      fd.append("image", file);
-      fd.append("type", "photo");
-      fd.append("patientId", selectedPatient);
-
-      imageApi.upload(fd)
-        .then(() => {
-          toast.success("Tải lên thành công!");
-          refetch();
-          setShowUploadForm(false);
-          setSelectedPatient("");
-        })
-        .catch((err: any) => {
-          toast.error(err.response?.data?.message || "Tải lên thất bại");
-        })
-        .finally(() => {
-          setUploading(false);
-        });
-    }
+    if (file) await uploadFile(file);
   };
 
   const openPreview = (img: DentalImage) => {
@@ -165,6 +164,16 @@ export default function DoctorImages() {
                 );
               })}
             </div>
+            <select
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-100 shadow-sm text-slate-600 focus:outline-none focus:border-violet-400"
+              value={patientFilter}
+              onChange={(e) => setPatientFilter(e.target.value)}
+            >
+              <option value="all">Tất cả bệnh nhân</option>
+              {patients.map((p) => (
+                <option key={p.id || p._id} value={p.id || p._id}>{p.name}</option>
+              ))}
+            </select>
             <button
               onClick={() => setShowUploadForm(true)}
               disabled={uploading}
@@ -221,6 +230,42 @@ export default function DoctorImages() {
                       </select>
                     </div>
 
+                    {/* Loại ảnh */}
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Loại ảnh</label>
+                      <div className="flex gap-2">
+                        {(["photo", "xray", "scan"] as const).map((t) => {
+                          const cfg = typeConfig[t];
+                          const active = uploadType === t;
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setUploadType(t)}
+                              className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all border-2"
+                              style={{
+                                background: active ? `${cfg.color}10` : "transparent",
+                                borderColor: active ? cfg.color : "#e2e8f0",
+                                color: active ? cfg.color : "#94a3b8",
+                              }}
+                            >
+                              {cfg.icon} {cfg.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Mô tả (không bắt buộc)</label>
+                      <input
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition"
+                        placeholder="Ví dụ: X-quang hàm trên, răng 36..."
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                      />
+                    </div>
+
                     {/* Drag and drop zone */}
                     <div
                       onDragOver={handleDragOver}
@@ -233,7 +278,7 @@ export default function DoctorImages() {
                             ? "border-slate-200 hover:border-violet-300 hover:bg-slate-50 cursor-pointer"
                             : "border-slate-200 bg-slate-50"
                       }`}
-                      onClick={() => selectedPatient && fileRef.current?.click()}
+                      onClick={() => (selectedPatient ? fileRef.current?.click() : toast.error("Vui lòng chọn bệnh nhân trước"))}
                     >
                       {uploading ? (
                         <div className="space-y-3">
@@ -266,6 +311,8 @@ export default function DoctorImages() {
                         onClick={() => {
                           setShowUploadForm(false);
                           setSelectedPatient("");
+                          setDescription("");
+                          setUploadType("photo");
                           if (fileRef.current) fileRef.current.value = "";
                         }}
                         className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition"
@@ -336,7 +383,7 @@ export default function DoctorImages() {
                     <div className="absolute inset-0 bg-gradient-to-t from-violet-900/80 via-violet-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4">
                       <p className="text-white text-sm font-bold truncate">{img.patientName}</p>
                       <p className="text-white/70 text-xs mt-1">
-                        {img.uploadedAt ? new Date(img.uploadedAt).toLocaleDateString("vi-VN") : ""}
+                        {dateOf(img) ? new Date(dateOf(img)!).toLocaleDateString("vi-VN") : ""}
                       </p>
                       <div className="flex items-center gap-2 mt-3">
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-white/90 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-lg">
@@ -355,80 +402,34 @@ export default function DoctorImages() {
         </div>
       </div>
 
-      {/* Preview Modal */}
+      {/* Xem ảnh: phóng to / thu nhỏ */}
       {showPreview && preview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
-          onClick={() => setShowPreview(false)}
-        >
-          <div
-            className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 py-4" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)" }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center backdrop-blur-md" style={{ background: "rgba(255,255,255,0.2)" }}>
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-bold text-white">{preview.patientName}</p>
-                  <p className="text-xs text-white/70">
-                    {typeConfig[preview.type]?.label || "Hình ảnh"} · {preview.uploadedAt ? new Date(preview.uploadedAt).toLocaleDateString("vi-VN", { day: "numeric", month: "long", year: "numeric" }) : ""}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition backdrop-blur-md"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Image */}
-            <img
-              src={preview.url}
-              alt={preview.description ?? "Dental image"}
-              className="w-full max-h-[70vh] object-contain"
-              style={{ background: "#0f0a1a" }}
-            />
-
-            {/* Footer */}
-            <div className="p-6 border-t border-slate-100">
-              {preview.description && (
-                <div className="mb-4">
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mô tả</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{preview.description}</p>
-                </div>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold" style={{ background: `${typeConfig[preview.type]?.color}15`, color: typeConfig[preview.type]?.color }}>
-                    {typeConfig[preview.type]?.icon} {typeConfig[preview.type]?.label}
-                  </span>
-                </div>
+        <ImageViewer
+          src={preview.url}
+          alt={preview.description ?? "Hình ảnh nha khoa"}
+          onClose={() => setShowPreview(false)}
+          caption={(() => {
+            const cfg = typeConfig[preview.type] || typeConfig.photo;
+            const d = dateOf(preview);
+            return (
+              <div>
+                <p className="font-bold">{preview.patientName}</p>
+                <p className="text-white/70">
+                  {cfg.icon} {cfg.label}{d ? ` · ${new Date(d).toLocaleDateString("vi-VN")}` : ""}
+                </p>
+                {preview.description && <p className="text-white/70 mt-0.5">{preview.description}</p>}
                 <a
                   href={preview.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition hover:-translate-y-0.5"
-                  style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 4px 14px rgba(109,40,217,0.4)" }}
+                  className="inline-block mt-2 text-xs font-semibold text-white/90 underline"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Tải xuống
+                  Mở ảnh gốc / Tải xuống
                 </a>
               </div>
-            </div>
-          </div>
-        </div>
+            );
+          })()}
+        />
       )}
     </div>
   );

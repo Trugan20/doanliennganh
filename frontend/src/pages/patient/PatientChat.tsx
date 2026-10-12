@@ -231,7 +231,7 @@ export default function PatientChat() {
       setLoading(true);
       const formData = new FormData();
       formData.append("image", file);
-      const res = await imageApi.upload(formData);
+      const res = await imageApi.uploadChat(formData);
       const imageUrl = res.data?.data?.url || res.data?.url;
       if (!imageUrl) throw new Error("No URL");
       const userMsg: Message = {
@@ -257,7 +257,7 @@ export default function PatientChat() {
       setLoading(true);
       const formData = new FormData();
       formData.append("audio", file);
-      const res = await imageApi.upload(formData);
+      const res = await imageApi.uploadChat(formData);
       const audioUrl = res.data?.data?.url || res.data?.url;
       if (!audioUrl) throw new Error("No URL");
       const userMsg: Message = {

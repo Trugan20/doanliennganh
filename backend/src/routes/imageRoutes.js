@@ -6,6 +6,7 @@ const {
   getMine,
   getById,
   upload,
+  uploadChat,
   remove,
   analyze,
   updateNotes,
@@ -16,6 +17,7 @@ const multerConfig = require("../config/multer");
 // Patient: own images only
 router.get("/me", auth, authorize("patient"), getMine);
 router.post("/upload", auth, multerConfig.any(), upload);
+router.post("/chat-upload", auth, multerConfig.any(), uploadChat);
 
 // Doctor & Admin: all images
 router.get("/", auth, authorize("admin", "doctor"), getAll);

@@ -2,7 +2,7 @@
 
 const router = require('express').Router();
 const {
-  getAll, getMyProfile, getById, create, update, updateMyProfile, remove, getMyPatients,
+  getAll, getMyProfile, getById, create, update, updateMyProfile, remove, getMyPatients, getExaminedPatients,
 } = require('../controllers/doctorController');
 const { auth, authorize } = require('../middleware/auth');
 
@@ -10,6 +10,7 @@ const { auth, authorize } = require('../middleware/auth');
 router.get('/me',       auth, authorize('doctor'), getMyProfile);
 router.put('/me',       auth, authorize('doctor'), updateMyProfile);
 router.get('/patients', auth, authorize('doctor'), getMyPatients);
+router.get('/examined-patients', auth, authorize('doctor'), getExaminedPatients);
 
 // All authenticated can list/view doctors
 router.get('/',    auth, getAll);

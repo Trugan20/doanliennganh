@@ -3,6 +3,8 @@ import PatientSidebar from "../../components/layout/PatientSidebar";
 import { imageApi } from "../../services/api";
 import { useApi } from "../../hooks/useApi";
 import type { DentalImage } from "../../types";
+import ImageViewer from "../../components/ui/ImageViewer";
+import { useToastContext } from "../../context/ToastContext";
 
 const typeConfig: Record<string, { label: string; color: string; bg: string; border: string; emoji: string }> = {
   xray:  { label: "X-Quang", color: "#0ea5e9", bg: "bg-blue-50", border: "border-blue-100", emoji: "🔬" },
@@ -19,22 +21,43 @@ export default function PatientImages() {
   const [showUploadPanel, setShowUploadPanel] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToastContext();
+  const [filter, setFilter] = useState<"all" | "xray" | "photo" | "scan">("all");
+  const allImages = images || [];
+  const filtered = allImages.filter((i) => filter === "all" || i.type === filter);
+  const countOf = (t: string) => allImages.filter((i) => i.type === t).length;
+  const dateOf = (i: any): string | undefined => i.uploadedAt || i.createdAt;
 
   const uploadFile = async (file: File, desc?: string) => {
+    if (!file.type.startsWith("image/")) { toast.error("Chỉ hỗ trợ file hình ảnh"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Ảnh vượt quá 10MB"); return; }
     setUploading(true);
-    const fd = new FormData();
-    fd.append("image", file);
+  const fd = new FormData();
     fd.append("type", uploadType);
     fd.append("description", desc || description);
+    fd.append("image", file);
     try {
       await imageApi.upload(fd);
+      toast.success("Tải lên thành công!");
       refetch();
       setShowUploadPanel(false);
       setDescription("");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.response?.data?.message || "Tải lên thất bại");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDelete = async (img: DentalImage) => {
+    if (!window.confirm("Xóa hình ảnh này?")) return;
+    try {
+      await imageApi.delete(img.id);
+      toast.success("Đã xóa hình ảnh");
+      refetch();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Xóa thất bại");
     }
   };
 
@@ -60,19 +83,25 @@ export default function PatientImages() {
         <div className="glass-header sticky top-0 z-10 px-6 lg:px-8 py-4 flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-xl font-bold text-slate-800">Hình ảnh</h1>
-            <p className="text-xs text-slate-400 mt-0.5">{(images || []).length} hình ảnh nha khoa</p>
+            <p className="text-xs text-slate-400 mt-0.5">{filtered.length} hình ảnh nha khoa</p>
           </div>
           <div className="flex items-center gap-2">
             {/* Type filter */}
-            {(["photo", "xray", "scan"] as const).map((type) => {
-              const cfg = typeConfig[type];
-              return (
-                <button key={type} onClick={() => {/* filter logic */}}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-500 hover:border-slate-300 transition">
-                  {cfg.emoji} {cfg.label}
-                </button>
-              );
-            })}
+            {([
+              { id: "all", label: "Tất cả", count: allImages.length },
+              { id: "photo", label: `${typeConfig.photo.emoji} ${typeConfig.photo.label}`, count: countOf("photo") },
+              { id: "xray", label: `${typeConfig.xray.emoji} ${typeConfig.xray.label}`, count: countOf("xray") },
+              { id: "scan", label: `${typeConfig.scan.emoji} ${typeConfig.scan.label}`, count: countOf("scan") },
+            ] as const).map((f) => (
+              <button key={f.id} onClick={() => setFilter(f.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                  filter === f.id
+                    ? "bg-emerald-500 border-emerald-500 text-white"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                }`}>
+                {f.label} ({f.count})
+              </button>
+            ))}
             <button onClick={() => setShowUploadPanel(!showUploadPanel)} className="btn-emerald">
               {showUploadPanel ? (
                 <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg> Đóng</>
@@ -159,7 +188,7 @@ export default function PatientImages() {
             </div>
           )}
 
-          {!loading && (images || []).length === 0 && (
+          {!loading && allImages.length === 0 && (
             <div className="card text-center py-20 animate-fade-in">
               <div className="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-5">
                 <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -177,21 +206,20 @@ export default function PatientImages() {
             </div>
           )}
 
-          {!loading && (images || []).length > 0 && (
+          {!loading && filtered.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {(images || []).map((img) => {
+              {filtered.map((img) => {
                 const cfg = typeConfig[img.type] || typeConfig.photo;
                 return (
-                  <div key={img.id}
+                  <div key={img.id} onClick={() => setPreview(img)}
                     className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-xl animate-fade-in"
                     style={{ boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.06)" }}>
                     <img src={img.url} alt={img.description || "Dental image"}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      onClick={() => setPreview(img)} />
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
 
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-3">
-                      <button onClick={(e) => { e.stopPropagation(); imageApi.delete(img.id); refetch(); }}
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(img); }}
                         className="self-end w-8 h-8 rounded-xl bg-red-500/90 text-white flex items-center justify-center text-xs hover:bg-red-600 transition backdrop-blur-sm">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
                       </button>
@@ -202,8 +230,8 @@ export default function PatientImages() {
                         {img.description && (
                           <p className="text-white/80 text-[10px] mt-1 leading-relaxed">{img.description}</p>
                         )}
-                        {img.uploadedAt && (
-                          <p className="text-white/50 text-[10px] mt-0.5">{new Date(img.uploadedAt).toLocaleDateString("vi-VN")}</p>
+                        {dateOf(img) && (
+                          <p className="text-white/50 text-[10px] mt-0.5">{new Date(dateOf(img)!).toLocaleDateString("vi-VN")}</p>
                         )}
                       </div>
                     </div>
@@ -212,49 +240,32 @@ export default function PatientImages() {
               })}
             </div>
           )}
+          {!loading && allImages.length > 0 && filtered.length === 0 && (
+            <div className="card text-center py-14 animate-fade-in">
+              <p className="font-bold text-slate-600">Không có hình ảnh thuộc loại này</p>
+            </div>
+          )}
         </div>
 
-        {/* Lightbox */}
+        {/* Xem ảnh: phóng to / thu nhỏ */}
         {preview && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-            style={{ background: "rgba(0,0,0,0.88)", backdropFilter: "blur(12px)" }}
-            onClick={() => setPreview(null)}>
-            <div className="relative max-w-3xl w-full rounded-2xl overflow-hidden shadow-2xl animate-scale-in"
-              onClick={(e) => e.stopPropagation()}>
-              {/* Close */}
-              <button onClick={() => setPreview(null)}
-                className="absolute top-4 right-4 z-10 w-10 h-10 rounded-xl bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition backdrop-blur-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-
-              <img src={preview.url} alt={preview.description || "Dental image"}
-                className="w-full max-h-[65vh] object-contain bg-slate-900" />
-
-              <div className="p-6 bg-white">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-bold text-slate-800 flex items-center gap-2">
-                      {(() => { const cfg = typeConfig[preview.type] || typeConfig.photo; return (
-                        <span className="w-8 h-8 rounded-lg flex items-center justify-center text-lg"
-                          style={{ background: `${cfg.color}15`, color: cfg.color }}>{cfg.emoji}</span>
-                      )})()}
-                      {(typeConfig[preview.type] || typeConfig.photo).label}
-                    </p>
-                    {preview.uploadedAt && (
-                      <p className="text-sm text-slate-400 mt-1">
-                        {new Date(preview.uploadedAt).toLocaleDateString("vi-VN", { year: "numeric", month: "long", day: "numeric" })}
-                      </p>
-                    )}
-                    {preview.description && <p className="text-sm text-slate-500 mt-1">{preview.description}</p>}
-                  </div>
-                  <button onClick={() => setPreview(null)}
-                    className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl font-semibold text-sm hover:bg-slate-200 transition flex-shrink-0">
-                    Đóng
-                  </button>
+          <ImageViewer
+            src={preview.url}
+            alt={preview.description || "Hình ảnh nha khoa"}
+            onClose={() => setPreview(null)}
+            caption={(() => {
+              const cfg = typeConfig[preview.type] || typeConfig.photo;
+              const d = dateOf(preview);
+              return (
+                <div>
+                  <p className="font-bold">
+                    {cfg.emoji} {cfg.label}{d ? ` · ${new Date(d).toLocaleDateString("vi-VN")}` : ""}
+                  </p>
+                  {preview.description && <p className="text-white/70 mt-0.5">{preview.description}</p>}
                 </div>
-              </div>
-            </div>
-          </div>
+              );
+            })()}
+          />
         )}
       </div>
     </div>

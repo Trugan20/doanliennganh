@@ -288,11 +288,36 @@ const updateNotes = async (req, res) => {
   }
 };
 
+// POST /api/images/chat-upload  [any authenticated user]
+// Chỉ lưu file và trả về URL cho tin nhắn chat, KHÔNG tạo bản ghi trong mục "Hình ảnh".
+const uploadChat = async (req, res) => {
+  try {
+    const f = req.file || (req.files && req.files[0]);
+    if (!f) return sendError(res, 400, "No file uploaded.");
+
+    const relPath = f.path.replace(/\\/g, "/");
+    const subdir = relPath.includes("/audio/") ? "audio" : "images";
+    // Trả về đường dẫn tương đối để chạy được cả khi đổi host/cổng
+    const url = `/uploads/${subdir}/${f.filename}`;
+
+    return sendSuccess(res, 201, "File uploaded", {
+      url,
+      filename: f.filename,
+      originalName: f.originalname,
+      mimetype: f.mimetype,
+      size: f.size,
+    });
+  } catch (err) {
+    return sendError(res, 500, err.message);
+  }
+};
+
 module.exports = {
   getAll,
   getMine,
   getById,
   upload,
+  uploadChat,
   remove,
   analyze,
   updateNotes,

@@ -96,6 +96,7 @@ export const doctorApi = {
     }),
   getById: (id: string) => api.get(`/doctors/${id}`),
   getMyProfile: () => api.get("/doctors/me"),
+  getExaminedPatients: () => api.get("/doctors/examined-patients"),
   updateMyProfile: (data: object) => api.put("/doctors/me", data),
   create: (data: object) => api.post("/doctors", data),
   update: (id: string, data: object) => api.put(`/doctors/${id}`, data),
@@ -199,6 +200,11 @@ export const imageApi = {
   getMine: () => api.get("/images/me"),
   upload: (formData: FormData) =>
     api.post("/images/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  // Dùng cho chat: chỉ lưu file, KHÔNG thêm vào mục "Hình ảnh"
+  uploadChat: (formData: FormData) =>
+    api.post("/images/chat-upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id: string) => api.delete(`/images/${id}`),

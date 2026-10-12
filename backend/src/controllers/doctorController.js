@@ -3,6 +3,8 @@
 const Doctor = require('../models/Doctor');
 const User = require('../models/User');
 const Patient = require('../models/Patient');
+const Appointment = require('../models/Appointment');
+const MedicalRecord = require('../models/MedicalRecord');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { getPagination, buildSort } = require('../utils/pagination');
 
@@ -158,4 +160,22 @@ const getMyPatients = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getMyProfile, getById, create, update, updateMyProfile, remove, getMyPatients };
+// GET /api/doctors/examined-patients  [doctor – bệnh nhân mình đã khám]
+const getExaminedPatients = async (req, res) => {
+  try {
+    const doctorUserId = req.user._id;
+    const [fromAppointments, fromRecords] = await Promise.all([
+      Appointment.distinct('patient', { doctor: doctorUserId, status: 'completed' }),
+      MedicalRecord.distinct('patient', { doctor: doctorUserId }),
+    ]);
+    const ids = [...new Set([...fromAppointments, ...fromRecords].map(String))];
+    const patients = await User.find({ _id: { $in: ids }, role: 'patient' })
+      .select('name email phone')
+      .sort({ name: 1 });
+    return sendSuccess(res, 200, 'Examined patients retrieved', patients);
+  } catch (err) {
+    return sendError(res, 500, err.message);
+  }
+};
+
+module.exports = { getAll, getMyProfile, getById, create, update, updateMyProfile, remove, getMyPatients, getExaminedPatients };

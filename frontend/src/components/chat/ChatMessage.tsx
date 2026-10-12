@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { KeyboardEvent } from "react";
 import { useToast } from "../../hooks/useToast";
+import ImageViewer from "../ui/ImageViewer";
 
 export interface Message {
   id: string;
@@ -46,6 +47,7 @@ export default function ChatMessage({
   const { toast } = useToast();
   const [input, setInput] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [viewerSrc, setViewerSrc] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
@@ -54,10 +56,17 @@ export default function ChatMessage({
   const recordedChunksRef = useRef<Blob[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isStartingRecordingRef = useRef(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, showQuickReplies]);
+
+  useEffect(() => () => {
+    mediaRecorderRef.current?.stop();
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    if (timerRef.current) clearInterval(timerRef.current);
+  }, []);
 
   const handleSendText = async () => {
     if (!input.trim() || loading) return;
@@ -89,30 +98,76 @@ export default function ChatMessage({
   };
 
   const startRecording = async () => {
+    if (isStartingRecordingRef.current || mediaRecorderRef.current) return;
+    isStartingRecordingRef.current = true;
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
-      const mediaRecorder = new MediaRecorder(stream);
+      const mimeType = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/ogg",
+        "audio/mp4",
+      ].find((type) => MediaRecorder.isTypeSupported(type));
+      const mediaRecorder = new MediaRecorder(
+        stream,
+        mimeType ? { mimeType } : undefined,
+      );
       mediaRecorderRef.current = mediaRecorder;
       recordedChunksRef.current = [];
-      mediaRecorder.ondataavailable = (e) => recordedChunksRef.current.push(e.data);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(recordedChunksRef.current, { type: "audio/webm" });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
-        try { await onSendAudio(file); } catch { toast.error("Gửi tin nhắn thoại thất bại"); }
+        const chunks = recordedChunksRef.current;
         recordedChunksRef.current = [];
+        const actualMimeType = mediaRecorder.mimeType || chunks[0]?.type || "audio/webm";
+        const blob = new Blob(chunks, { type: actualMimeType });
+        const extensionByMimeType: Record<string, string> = {
+          "audio/webm": "webm",
+          "audio/ogg": "ogg",
+          "audio/mp4": "mp4",
+        };
+        const mimeTypeBase = actualMimeType.split(";")[0].toLowerCase();
+
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        mediaRecorderRef.current = null;
+        isStartingRecordingRef.current = false;
+
+        if (!blob.size) {
+          toast.error("Không thu được âm thanh. Vui lòng thử ghi âm lại");
+          return;
+        }
+
+        const extension = extensionByMimeType[mimeTypeBase] || "webm";
+        const file = new File([blob], `voice-${Date.now()}.${extension}`, {
+          type: actualMimeType,
+        });
+        try {
+          await onSendAudio(file);
+        } catch {
+          toast.error("Gửi tin nhắn thoại thất bại");
+        }
       };
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime((p) => p + 1), 1000);
-    } catch { toast.error("Không thể truy cập microphone"); }
+    } catch {
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      mediaRecorderRef.current = null;
+      isStartingRecordingRef.current = false;
+      toast.error("Không thể truy cập microphone hoặc trình duyệt không hỗ trợ ghi âm");
+    }
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      mediaStreamRef.current?.getTracks().forEach((t) => t.stop());
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
       setRecordingTime(0);
@@ -198,7 +253,7 @@ export default function ChatMessage({
               >
                 {msg.type === "text" && <p className="text-sm leading-relaxed break-words whitespace-pre-line">{msg.content}</p>}
                 {msg.type === "image" && msg.imageUrl && (
-                  <img src={msg.imageUrl} alt="Shared" className="rounded-xl max-w-full" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <img src={msg.imageUrl} alt="Shared" className="rounded-xl max-w-full max-h-72 cursor-zoom-in" onClick={() => setViewerSrc(msg.imageUrl!)} />
                 )}
                 {msg.type === "audio" && msg.audioUrl && (
                   <div className="flex items-center gap-2">
@@ -307,10 +362,12 @@ export default function ChatMessage({
 
           {/* Voice */}
           <button
-            onMouseDown={startRecording}
-            onMouseUp={stopRecording}
-            onTouchStart={startRecording}
-            onTouchEnd={stopRecording}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              void startRecording();
+            }}
+            onPointerUp={stopRecording}
+            onPointerCancel={stopRecording}
             className={`flex items-center justify-center w-9 h-9 rounded-full transition flex-shrink-0 ${
               isRecording ? "bg-red-500 text-white animate-pulse" : "hover:bg-slate-200 text-teal-600"
             }`}
@@ -347,6 +404,8 @@ export default function ChatMessage({
           </button>
         </div>
       </div>
+
+      {viewerSrc && <ImageViewer src={viewerSrc} alt="Hình ảnh trong cuộc trò chuyện" onClose={() => setViewerSrc(null)} />}
     </div>
   );
 }
