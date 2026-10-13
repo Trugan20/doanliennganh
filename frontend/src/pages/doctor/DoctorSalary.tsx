@@ -138,66 +138,92 @@ export default function DoctorSalary() {
   const userCoeff = degreeCoefficients[userDegree] || 1.2;
 
   // ─── Fetch salary for selected month/year ───
-  const fetchCurrentSalary = async () => {
-    if (!doctorId) return;
-    setLoadingSalary(true);
-    try {
-      const res = await salaryApi.calculate({
-        doctorId,
-        month: filterMonth,
-        year: filterYear,
-        basicHourlyRate,
-        degreeCoefficient: userCoeff,
-      });
-      const data = unwrap(res);
-      setCurrentSalary(data);
-      // Save salary record ID for modal
-      if (data && data._id) setSalaryRecordId(data._id);
-    } catch {
+ 
+const fetchCurrentSalary = async () => {
+  if (!doctorId) return;
+
+  setLoadingSalary(true);
+
+  try {
+    // Đọc phiếu lương đã được admin tính và lưu
+    const res = await salaryApi.mySalaries({
+      year: filterYear,
+      month: filterMonth,
+      limit: 50,
+    });
+
+    const records = unwrap<any[]>(res);
+    const savedSalaries = Array.isArray(records) ? records : [];
+
+    // Lấy đúng phiếu lương của tháng/năm đang chọn
+    const record = savedSalaries.find(
+      (item: any) =>
+        Number(item.month) === Number(filterMonth) &&
+        Number(item.year) === Number(filterYear) &&
+        item.status !== "cancelled"
+    );
+
+    if (record) {
+      setCurrentSalary(record);
+      setSalaryRecordId(record._id || record.id || null);
+    } else {
       setCurrentSalary(null);
       setSalaryRecordId(null);
-    } finally {
-      setLoadingSalary(false);
     }
-  };
+  } catch (error) {
+    console.error("Lỗi tải phiếu lương:", error);
+    setCurrentSalary(null);
+    setSalaryRecordId(null);
+  } finally {
+    setLoadingSalary(false);
+  }
+};
 
   // ─── Fetch yearly trend (12 months) ───
-  const fetchYearlyTrend = async () => {
-    if (!doctorId) return;
-    setLoadingYearly(true);
-    try {
-      const results = await Promise.all(
-        Array.from({ length: 12 }, async (_, idx) => {
-          const month = idx + 1;
-          try {
-            const res = await salaryApi.calculate({
-              doctorId,
-              month,
-              year: filterYear,
-              basicHourlyRate,
-              degreeCoefficient: userCoeff,
-            });
-            const data = unwrap(res);
-            return { ...data, month };
-          } catch {
-            return {
-              month,
-              totalShifts: 0,
-              totalWorkingHours: 0,
-              totalEquivalentHours: 0,
-              totalAmount: 0,
-              totalDifficulty: 0,
-            };
-          }
-        })
+  
+const fetchYearlyTrend = async () => {
+  if (!doctorId) return;
+
+  setLoadingYearly(true);
+
+  try {
+    const res = await salaryApi.mySalaries({
+      year: filterYear,
+      limit: 50,
+    });
+
+    const records = unwrap<any[]>(res);
+    const savedSalaries = Array.isArray(records) ? records : [];
+
+    const results = Array.from({ length: 12 }, (_, idx) => {
+      const month = idx + 1;
+
+      const record = savedSalaries.find(
+        (item: any) =>
+          Number(item.month) === month &&
+          Number(item.year) === Number(filterYear) &&
+          item.status !== "cancelled"
       );
-      setYearlyData(results);
-    } catch {
-      setYearlyData([]);
-    } finally {
-      setLoadingYearly(false);
-    }
-  };
+
+      return {
+        month,
+        totalShifts: record?.totalShifts ?? 0,
+        totalWorkingHours: record?.totalWorkingHours ?? 0,
+        totalEquivalentHours: record?.totalEquivalentHours ?? 0,
+        totalAmount: record?.totalAmount ?? 0,
+        totalDifficulty: record?.totalDifficulty ?? 0,
+        status: record?.status ?? null,
+      };
+    });
+
+    setYearlyData(results);
+  } catch (error) {
+    console.error("Lỗi tải bảng lương theo năm:", error);
+    setYearlyData([]);
+  } finally {
+    setLoadingYearly(false);
+  }
+};
 
   // ─── Fetch monthly list for current year ───
   const fetchMonthlyList = async () => {
