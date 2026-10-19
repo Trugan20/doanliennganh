@@ -763,7 +763,7 @@ const handlePrintInvoice = (pObj: Payment) => {
         ` : ""}
 
         <div style="text-align: center; font-size: 14px; font-weight: bold; color: #003A70; margin-bottom: 30px;">
-          Cảm ơn Quý khách đã tin tưởng dịch vụ tại Nha khoa VinaMec!
+          Cảm ơn Quý khách đã tin tưởng dịch vụ tại Nha khoa Mirai!
         </div>
 
         <div class="signatures">

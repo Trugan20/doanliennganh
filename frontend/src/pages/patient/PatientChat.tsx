@@ -79,7 +79,7 @@ export default function PatientChat() {
       id: `welcome-${Date.now()}`,
       sender: { id: "ai-assistant", name: "Trợ lý Nha khoa AI" },
       type: "text",
-      content: "Xin chào! 👋 Chào mừng bạn đến với Nha Khoa VinaMec!\n\nTôi là trợ lý nha khoa AI, có thể giúp bạn:\n\n• Tư vấn về sức khỏe răng miệng\n• Giải đáp thắc mắc về các dịch vụ nha khoa\n• Tìm hiểu về chi phí điều trị\n• Hướng dẫn chăm sóc răng miệng hàng ngày\n\nBạn cần tôi hỗ trợ gì hôm nay? 😊",
+      content: "Xin chào! 👋 Chào mừng bạn đến với Nha Khoa Mirai!\n\nTôi là trợ lý nha khoa AI, có thể giúp bạn:\n\n• Tư vấn về sức khỏe răng miệng\n• Giải đáp thắc mắc về các dịch vụ nha khoa\n• Tìm hiểu về chi phí điều trị\n• Hướng dẫn chăm sóc răng miệng hàng ngày\n\nBạn cần tôi hỗ trợ gì hôm nay? 😊",
       timestamp: new Date().toISOString(),
       isOwn: false,
     }]);

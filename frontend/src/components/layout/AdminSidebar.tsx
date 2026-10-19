@@ -15,7 +15,7 @@ export default function AdminSidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Auto-sync admin name if it contains legacy 'Admin VinaMec'
+  // Auto-sync admin name if it contains legacy 'Admin '
   useEffect(() => {
     if (user && /admin\s*vinamec/i.test(user.name)) {
       try {

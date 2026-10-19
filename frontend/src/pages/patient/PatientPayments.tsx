@@ -210,7 +210,7 @@ export default function PatientPayments() {
                 💵
               </div>
               <p className="text-sm text-slate-600">
-                Để thanh toán bằng tiền mặt, quý khách vui lòng đến trực tiếp quầy tiếp đón hoặc quầy thu ngân của phòng khám Nha khoa VinaMec.
+                Để thanh toán bằng tiền mặt, quý khách vui lòng đến trực tiếp quầy tiếp đón hoặc quầy thu ngân của phòng khám Nha khoa Mirai.
               </p>
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-left space-y-2">
                 <p className="text-xs text-emerald-700 font-bold uppercase tracking-wider">Thông tin thanh toán:</p>

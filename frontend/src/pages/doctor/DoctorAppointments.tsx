@@ -974,7 +974,7 @@ function CashCheckoutModal({
       </style></head>
       <body>
         <div class="invoice-card">
-          <h2>PHÒNG KHÁM NHA KHOA VINAMEC</h2>
+          <h2>PHÒNG KHÁM NHA KHOA MIRAI</h2>
           <div class="subtitle">Phiếu Thu Tiền Mặt (Bản In)</div>
           <p style="text-align: left; font-size: 13px;">
             <strong>Mã hóa đơn:</strong> ${payment.invoiceNumber}<br/>
@@ -1006,7 +1006,7 @@ function CashCheckoutModal({
               <span>${change?.toLocaleString("vi-VN")} đ</span>
             </div>
           ` : ""}
-          <p class="footer-text">Cảm ơn quý khách đã tin tưởng dịch vụ của VinaMec!</p>
+          <p class="footer-text">Cảm ơn quý khách đã tin tưởng dịch vụ của Nha khoa Mirai!</p>
         </div>
         <script>window.print();<\/script>
       </body></html>
