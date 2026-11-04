@@ -231,8 +231,6 @@ npm run build
 npm run preview
 npm run lint
 ```
-
-
 ## 8. Kiến trúc hệ thống
 
 Hệ thống được xây dựng theo mô hình Client – Server:
@@ -257,16 +255,18 @@ Frontend chịu trách nhiệm hiển thị giao diện và tương tác với n
 ## 9. Thành viên thực hiện
 
 **Đồ án liên ngành – Ứng dụng quản lý và chăm sóc sức khỏe răng miệng MIRAI**
-1. Lữ Trung Anh
+Các thành viên thực hiện:
 
-2. Đỗ Quỳnh Chi
+Lữ Trung Anh
 
-3. Đỗ Vân Khánh
+Đỗ Quỳnh Chi
+
+Đỗ Vân Khánh
 - Đơn vị: Trường Đại học Phenikaa.
 - Ngành học: Công nghệ thông tin.
 - Học phần: Đồ án liên ngành.
 
-## 10. Định hướng phát triển
+## 11. Định hướng phát triển
 
 - Tiếp tục hoàn thiện giao diện và trải nghiệm người dùng.
 - Nâng cao khả năng bảo mật dữ liệu.
