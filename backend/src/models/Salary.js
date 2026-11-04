@@ -18,6 +18,10 @@ const salarySchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    doctorDegree: {
+      type: String,
+      trim: true,
+    },
     month: {
       type: Number,
       required: [true, "Month is required"],

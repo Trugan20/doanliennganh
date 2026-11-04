@@ -588,6 +588,14 @@ export default function AdminSalary() {
   const activeDoctorInfo = doctorsList.find(d => (d.id || d._id) === filterDoctorId);
   const activeDoctorDegree = filterDoctorId ? doctorDegrees[filterDoctorId] || "Đại học" : "Đại học";
   const activeDoctorMultiplier = degreeCoefficients[activeDoctorDegree] || 1.2;
+  const detailDoctorId = detailModal.data?.salaryRecord?.doctorId?._id || detailModal.data?.salaryRecord?.doctorId;
+  const detailDoctorDegree = detailModal.data?.salaryRecord?.doctorDegree
+    || detailModal.data?.salaryRecord?.doctorId?.degree
+    || doctorDegrees[detailDoctorId]
+    || "Đại học";
+  const detailDegreeCoefficient = detailModal.data?.salaryRecord?.degreeCoefficient
+    ?? degreeCoefficients[detailDoctorDegree]
+    ?? 1.2;
 
   // Slip table sessions mapping
   const doctorMonthlySessions: MappedSession[] = (activeSalary?.shiftDetails || []).map((s: any) => ({
@@ -617,7 +625,7 @@ export default function AdminSalary() {
       id: docId,
       name: s.doctorName,
       code: docId.slice(-5).toUpperCase(),
-      degree: s.doctorDegree || doctorDegrees[docId] || "Đại học",
+      degree: s.doctorDegree || s.doctorId?.degree || doctorDegrees[docId] || "Đại học",
       shifts: s.totalShifts || 0,
       workingHours: s.totalWorkingHours || 0,
       equivHours: s.totalEquivalentHours || 0,
@@ -1736,9 +1744,9 @@ export default function AdminSalary() {
                   <p className="text-sm text-slate-500 mt-0.5">
                     Bác sĩ: <span className="font-bold text-sky-700">{detailModal.data.salaryRecord?.doctorName}</span>
                     {" | "}
-                    Học vị: <span className="font-bold text-slate-700">{detailModal.data.salaryRecord?.doctorDegree || "Đại học"}</span>
+                    Học vị: <span className="font-bold text-slate-700">{detailDoctorDegree}</span>
                     {" | "}
-                    Hệ số lương: <span className="font-black text-indigo-600">{degreeCoefficients[detailModal.data.salaryRecord?.doctorDegree]?.toFixed(1) || "1.2"}</span>
+                    Hệ số lương: <span className="font-black text-indigo-600">{detailDegreeCoefficient.toFixed(1)}</span>
                   </p>
                 )}
               </div>
@@ -1969,7 +1977,7 @@ export default function AdminSalary() {
                       <div>
                         <p className="text-slate-400 text-xs font-bold uppercase">Hệ số bằng cấp</p>
                         <p className="font-black text-indigo-700 text-lg mt-0.5">
-                          {(degreeCoefficients[detailModal.data.salaryRecord?.doctorDegree] || 1.2).toFixed(1)}
+                          {detailDegreeCoefficient.toFixed(1)}
                         </p>
                       </div>
                       <div>
@@ -2021,7 +2029,7 @@ export default function AdminSalary() {
                     const d = detailModal.data!;
                     const csvContent = [
                       `CHI TIẾT LƯƠNG THÁNG ${filterMonth}/${filterYear} - Bác sĩ: ${d.salaryRecord?.doctorName}`,
-                      `Học vị: ${d.salaryRecord?.doctorDegree} | Hệ số lương: ${degreeCoefficients[d.salaryRecord?.doctorDegree]?.toFixed(1) || "1.2"} | Đơn giá: ${basicHourlyRate.toLocaleString("vi-VN")} đ/h`,
+                      `Học vị: ${detailDoctorDegree} | Hệ số lương: ${detailDegreeCoefficient.toFixed(1)} | Đơn giá: ${basicHourlyRate.toLocaleString("vi-VN")} đ/h`,
                       "",
                       "Ngày,Ca,Giờ làm,BN,Số BN khó,Tổng HS khó,Giờ QĐ,Thành tiền",
                       ...d.enrichedShiftDetails.map((sh: any) =>

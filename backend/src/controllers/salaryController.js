@@ -139,6 +139,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       doctor: doctor.user,
       doctorId: doctorId,
       doctorName: doctor.name,
+      doctorDegree: doctor.degree,
       month: month,
       year: year,
       basicHourlyRate: basicHourlyRate || 250000,
@@ -156,6 +157,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
     // Update existing salary record
     salary.basicHourlyRate = basicHourlyRate || 250000;
     salary.degreeCoefficient = degreeCoefficient || 1.2;
+    salary.doctorDegree = doctor.degree;
     salary.totalShifts = shifts.length;
     salary.shiftDetails = shiftDetails;
     salary.totalWorkingHours = parseFloat(totalWorkingHours.toFixed(2));
@@ -213,6 +215,7 @@ exports.getSalaryDetail = asyncHandler(async (req, res) => {
 
   const salary = await Salary.findById(id)
     .populate("doctor", "name email specialization")
+    .populate("doctorId", "degree")
     .populate("approvedBy", "name email");
 
   if (!salary) {
@@ -361,7 +364,7 @@ exports.listSalaries = asyncHandler(async (req, res) => {
 
   const salaries = await Salary.find(filter)
     .populate("doctor", "name email")
-    .populate("doctorId", "name specialization")
+    .populate("doctorId", "name specialization degree")
     .populate("approvedBy", "name email")
     .sort({ year: -1, month: -1, createdAt: -1 })
     .skip(skip)
