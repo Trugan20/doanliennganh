@@ -61,6 +61,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
   let totalWorkingHours = 0;
   let totalEquivalentHours = 0;
   let totalDifficulty = 0;
+  let hardCasesCount = 0;
   let totalAmount = 0;
   const shiftDetails = [];
 
@@ -89,6 +90,11 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       const difficulty = getDifficultyScore(apt);
       shiftTotalDifficulty += difficulty;
     });
+    const shiftHardCasesCount = appointments.some(
+      (apt) => getDifficultyScore(apt) > 0,
+    )
+      ? 1
+      : 0;
 
     // Calculate equivalent hours = base_hours * (shift_multiplier + difficulty)
     const equivalentHours =
@@ -108,6 +114,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       shiftMultiplier: parseFloat(shiftMultiplier.toFixed(2)),
       patientsCount: appointments.length,
       totalDifficulty: parseFloat(shiftTotalDifficulty.toFixed(2)),
+      hardCasesCount: shiftHardCasesCount,
       equivalentHours: parseFloat(equivalentHours.toFixed(2)),
       shiftAmount: shiftAmount,
     });
@@ -115,6 +122,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
     totalWorkingHours += workingHours;
     totalEquivalentHours += equivalentHours;
     totalDifficulty += shiftTotalDifficulty;
+    hardCasesCount += shiftHardCasesCount;
     totalAmount += shiftAmount;
   }
 
@@ -140,6 +148,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
       totalWorkingHours: parseFloat(totalWorkingHours.toFixed(2)),
       totalEquivalentHours: parseFloat(totalEquivalentHours.toFixed(2)),
       totalDifficulty: parseFloat(totalDifficulty.toFixed(2)),
+      hardCasesCount,
       totalAmount: Math.round(totalAmount),
       status: "calculated",
     });
@@ -152,6 +161,7 @@ exports.calculateSalary = asyncHandler(async (req, res) => {
     salary.totalWorkingHours = parseFloat(totalWorkingHours.toFixed(2));
     salary.totalEquivalentHours = parseFloat(totalEquivalentHours.toFixed(2));
     salary.totalDifficulty = parseFloat(totalDifficulty.toFixed(2));
+    salary.hardCasesCount = hardCasesCount;
     salary.totalAmount = Math.round(totalAmount);
     salary.status = "calculated";
   }
@@ -287,7 +297,7 @@ exports.getSalaryDetail = asyncHandler(async (req, res) => {
   }
 
   // Count difficult cases
-  const hardCases = enrichedShiftDetails.filter(s => s.totalDifficulty > 0);
+  const hardCasesCount = enrichedShiftDetails.filter(s => s.totalDifficulty > 0).length;
   const totalHardPatients = enrichedShiftDetails.reduce((sum, s) => {
     return sum + s.appointments.filter(a => a.difficulty > 0).length;
   }, 0);
@@ -326,7 +336,7 @@ exports.getSalaryDetail = asyncHandler(async (req, res) => {
       enrichedShiftDetails,
       totalWorkingHours: parseFloat(totalWorkingHours.toFixed(2)),
       totalDifficulty: parseFloat(totalDifficulty.toFixed(2)),
-      hardCasesCount: hardCases.length,
+      hardCasesCount,
       hardPatientsCount: totalHardPatients,
       totalRevenue,
       dailyBreakdown,

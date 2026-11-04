@@ -55,6 +55,7 @@ const salarySchema = new mongoose.Schema(
         shiftMultiplier: Number,
         patientsCount: Number,
         totalDifficulty: Number,
+        hardCasesCount: Number,
         equivalentHours: Number,
         shiftAmount: Number,
       },
@@ -71,6 +72,11 @@ const salarySchema = new mongoose.Schema(
       min: 0,
     },
     totalDifficulty: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    hardCasesCount: {
       type: Number,
       default: 0,
       min: 0,

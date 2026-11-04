@@ -622,6 +622,7 @@ export default function AdminSalary() {
       workingHours: s.totalWorkingHours || 0,
       equivHours: s.totalEquivalentHours || 0,
       totalDifficulty: s.totalDifficulty || 0,
+      hardCasesCount: s.hardCasesCount ?? s.shiftDetails?.filter((shift: any) => shift.totalDifficulty > 0).length ?? 0,
       totalAmount: s.totalAmount || 0,
     };
   });
@@ -636,6 +637,7 @@ export default function AdminSalary() {
       workingHours: record?.totalWorkingHours || 0,
       equivHours: record?.totalEquivalentHours || 0,
       difficulty: record?.totalDifficulty || 0,
+      hardCasesCount: record?.hardCasesCount || 0,
       amount: record?.totalAmount || 0
     };
   });
@@ -674,7 +676,7 @@ export default function AdminSalary() {
             return [
               ` Thu nhập: ${rec.amount.toLocaleString("vi-VN")} đ`,
               ` Giờ làm việc: ${rec.workingHours.toFixed(1)} giờ`,
-              ` Số ca khó: ${rec.difficulty > 0 ? Math.round(rec.difficulty / 0.2) : 0} ca`,
+              ` Số ca khó: ${rec.hardCasesCount} ca`,
               ` Hệ số lương: ${activeDoctorMultiplier.toFixed(1)}`,
             ];
           }
@@ -1452,8 +1454,8 @@ export default function AdminSalary() {
                               <td className="px-4 py-4 text-center font-medium text-slate-600">{d.shifts}</td>
                               <td className="px-4 py-4 text-center font-bold text-slate-700">{d.workingHours.toFixed(1)}</td>
                               <td className="px-4 py-4 text-center">
-                                {d.totalDifficulty > 0 ? (
-                                  <span className="px-2 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold">{Math.round(d.totalDifficulty / 0.2)} ca</span>
+                                {d.hardCasesCount > 0 ? (
+                                  <span className="px-2 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold">{d.hardCasesCount} ca</span>
                                 ) : (
                                   <span className="px-2 py-1 bg-gray-100 text-gray-400 rounded-full text-xs font-bold">0 ca</span>
                                 )}
@@ -1589,8 +1591,8 @@ export default function AdminSalary() {
                               <td className="px-4 py-3 text-center font-bold text-sky-600">{d.workingHours.toFixed(1)} giờ</td>
                               <td className="px-4 py-3 text-center font-bold text-indigo-500">{d.equivHours.toFixed(2)}</td>
                               <td className="px-4 py-3 text-center">
-                                {d.difficulty > 0 ? (
-                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{Math.round(d.difficulty / 0.2)} ca</span>
+                                {d.hardCasesCount > 0 ? (
+                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{d.hardCasesCount} ca</span>
                                 ) : (
                                   <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full text-xs font-bold">0 ca</span>
                                 )}
@@ -1617,7 +1619,7 @@ export default function AdminSalary() {
                               {doctorYearlyData.reduce((s, d) => s + d.equivHours, 0).toFixed(2)}
                             </td>
                             <td className="px-4 py-3.5 text-center font-black text-red-600">
-                              {doctorYearlyData.reduce((s, d) => s + (d.difficulty > 0 ? Math.round(d.difficulty / 0.2) : 0), 0)} ca
+                              {doctorYearlyData.reduce((s, d) => s + d.hardCasesCount, 0)} ca
                             </td>
                             <td className="px-4 py-3.5 text-center font-black text-orange-600">
                               {doctorYearlyData.reduce((s, d) => s + d.difficulty, 0).toFixed(2)}

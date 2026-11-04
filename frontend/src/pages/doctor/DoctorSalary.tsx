@@ -317,6 +317,7 @@ const fetchYearlyTrend = async () => {
     hours: currentSalary.totalWorkingHours || 0,
     equivHours: currentSalary.totalEquivalentHours || 0,
     difficulty: currentSalary.totalDifficulty || 0,
+    hardCasesCount: currentSalary.hardCasesCount || 0,
     amount: currentSalary.totalAmount || 0,
     shiftDetails: currentSalary.shiftDetails || [],
   } : null;
@@ -332,6 +333,7 @@ const fetchYearlyTrend = async () => {
       workingHours: rec?.totalWorkingHours || 0,
       equivHours: rec?.totalEquivalentHours || 0,
       difficulty: rec?.totalDifficulty || 0,
+      hardCasesCount: rec?.hardCasesCount || 0,
       amount: rec?.totalAmount || 0,
     };
   });
@@ -367,7 +369,7 @@ const fetchYearlyTrend = async () => {
             return [
               ` Thu nhập: ${rec.amount.toLocaleString("vi-VN")} đ`,
               ` Giờ làm việc: ${rec.workingHours.toFixed(1)} giờ`,
-              ` Số ca khó: ${rec.difficulty > 0 ? Math.round(rec.difficulty / 0.2) : 0} ca`,
+              ` Số ca khó: ${rec.hardCasesCount} ca`,
               ` Hệ số lương: ${userCoeff.toFixed(1)}`,
             ];
           }
@@ -552,7 +554,7 @@ const fetchYearlyTrend = async () => {
                         <span className="text-xl">🦷</span>
                         <div>
                           <p className="text-xs font-bold text-red-400 uppercase">Ca khó trong tháng</p>
-                          <p className="font-black text-red-600 text-lg">{Math.round(currentMonthData.difficulty / 0.2)} ca khó</p>
+                          <p className="font-black text-red-600 text-lg">{currentMonthData.hardCasesCount} ca khó</p>
                           <p className="text-xs text-red-400">Hệ số cộng thêm: +{currentMonthData.difficulty.toFixed(2)}</p>
                         </div>
                       </div>
@@ -777,8 +779,8 @@ const fetchYearlyTrend = async () => {
                               <td className="px-4 py-3.5 text-center font-bold text-sky-600">{d.workingHours.toFixed(1)} giờ</td>
                               <td className="px-4 py-3.5 text-center font-bold text-violet-500">{d.equivHours.toFixed(2)}</td>
                               <td className="px-4 py-3.5 text-center">
-                                {d.difficulty > 0 ? (
-                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{Math.round(d.difficulty / 0.2)} ca</span>
+                                {d.hardCasesCount > 0 ? (
+                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{d.hardCasesCount} ca</span>
                                 ) : (
                                   <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full text-xs font-bold">0 ca</span>
                                 )}
@@ -804,7 +806,7 @@ const fetchYearlyTrend = async () => {
                               {yearlyMapped.reduce((s, d) => s + d.equivHours, 0).toFixed(2)}
                             </td>
                             <td className="px-4 py-3.5 text-center font-black text-red-600">
-                              {yearlyMapped.reduce((s, d) => s + (d.difficulty > 0 ? Math.round(d.difficulty / 0.2) : 0), 0)} ca
+                              {yearlyMapped.reduce((s, d) => s + d.hardCasesCount, 0)} ca
                             </td>
                             <td className="px-4 py-3.5 text-center font-black text-orange-600">
                               {yearlyMapped.reduce((s, d) => s + d.difficulty, 0).toFixed(2)}

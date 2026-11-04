@@ -49,7 +49,6 @@ const paymentSchema = new mongoose.Schema(
 );
 
 paymentSchema.index({ patient: 1 });
-paymentSchema.index({ invoiceNumber: 1 });
 paymentSchema.index({ status: 1 });
 paymentSchema.index({ paidAt: 1 });
 
