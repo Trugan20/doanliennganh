@@ -4,6 +4,7 @@ const Conversation = require("../models/Conversation");
 const User = require("../models/User");
 const { sendSuccess, sendError, sendPaginated } = require("../utils/response");
 const { getPagination } = require("../utils/pagination");
+const { notifyConversationMessage } = require("../socket/chatSocket");
 
 // Helper to fix old media URLs
 const normalizeMediaUrls = (messages = []) => {
@@ -171,6 +172,7 @@ const sendMessage = async (req, res) => {
     ]);
 
     const lastMsg = populated.messages[populated.messages.length - 1];
+    notifyConversationMessage(populated, userId, lastMsg);
     return sendSuccess(res, 201, "Message sent", lastMsg);
   } catch (err) {
     return sendError(res, 500, err.message);

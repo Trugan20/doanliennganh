@@ -10,6 +10,7 @@ const helmet = require("helmet");
 const path = require("path");
 const fs = require("fs");
 const { setupSalarySocket } = require("./src/socket/salarySocket");
+const { setupChatSocket } = require("./src/socket/chatSocket");
 
 const connectDB = require("./src/config/db");
 const corsOptions = require("./src/config/cors");
@@ -40,6 +41,7 @@ const PORT = process.env.PORT || 5000;
 
 // Setup Salary real-time notifications
 setupSalarySocket(io);
+setupChatSocket(io);
 
 // ─── Connect DB ──────────────────────────────────────────────────────────────
 connectDB();

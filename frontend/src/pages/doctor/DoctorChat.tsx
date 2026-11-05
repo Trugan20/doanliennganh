@@ -8,6 +8,7 @@ import {
   appointmentApi,
   chatApi,
 } from "../../services/api";
+import { chatSocketService } from "../../services/chatSocket";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../hooks/useToast";
 import type { User, Appointment, ChatMessage as ChatMsg } from "../../types";
@@ -42,6 +43,44 @@ export default function DoctorChat() {
   useEffect(() => {
     checkTodayAppointments();
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token || !user) return;
+
+    chatSocketService.connect(token);
+    return () => chatSocketService.disconnect();
+  }, [user]);
+
+  useEffect(() => {
+    if (!selectedConversation || isChatbot) return;
+
+    return chatSocketService.onMessage(({ conversationId, message }) => {
+      if (conversationId !== selectedConversation) return;
+
+      const senderId = message.sender?._id;
+      const incomingMessage: Message = {
+        id: message._id,
+        sender: {
+          id: senderId,
+          name: message.sender?.name || "Bệnh nhân",
+          avatar: message.sender?.avatar,
+        },
+        type: message.type || "text",
+        content: message.content,
+        imageUrl: message.imageUrl,
+        audioUrl: message.audioUrl,
+        timestamp: message.createdAt || new Date().toISOString(),
+        isOwn: senderId === (user?._id || user?.id),
+      };
+
+      setMessages((current) =>
+        current.some((existing) => existing.id === incomingMessage.id)
+          ? current
+          : [...current, incomingMessage],
+      );
+    });
+  }, [selectedConversation, isChatbot, user]);
 
   useEffect(() => {
     if (!isChatbot) return;
