@@ -212,6 +212,7 @@ const fetchYearlyTrend = async () => {
         totalEquivalentHours: record?.totalEquivalentHours ?? 0,
         totalAmount: record?.totalAmount ?? 0,
         totalDifficulty: record?.totalDifficulty ?? 0,
+        hardCasesCount: record?.hardCasesCount ?? 0,
         status: record?.status ?? null,
       };
     });
@@ -654,15 +655,15 @@ const fetchYearlyTrend = async () => {
                       </thead>
                       <tbody>
                         {monthlyList.map((record: any) => {
-                          const diff = record.totalDifficulty || 0;
+                          const hardCasesCount = record.hardCasesCount ?? 0;
                           return (
                             <tr key={record._id || record.month} className="border-b border-slate-50 hover:bg-violet-50/30 transition">
                               <td className="px-4 py-3.5 font-bold text-slate-700">Tháng {record.month}/{record.year}</td>
                               <td className="px-4 py-3.5 text-center text-slate-600">{record.totalShifts || 0}</td>
                               <td className="px-4 py-3.5 text-center font-bold text-violet-500">{record.totalEquivalentHours?.toFixed(2) || 0}</td>
                               <td className="px-4 py-3.5 text-center">
-                                {diff > 0 ? (
-                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{Math.round(diff / 0.2)} ca</span>
+                                {hardCasesCount > 0 ? (
+                                  <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-full text-xs font-bold">{hardCasesCount} ca</span>
                                 ) : (
                                   <span className="px-2 py-0.5 bg-gray-100 text-gray-400 rounded-full text-xs font-bold">0 ca</span>
                                 )}
