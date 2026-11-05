@@ -110,7 +110,7 @@ Trước khi cài đặt dự án, cần chuẩn bị:
 ### Bước 1: Tải source code
 
 ```bash
-git clone <LINK_GITHUB_CUA_BAN>
+git clone https://github.com/Trugan20/doanliennganh
 ```
 
 Di chuyển vào thư mục dự án:
